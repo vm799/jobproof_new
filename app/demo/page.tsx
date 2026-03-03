@@ -149,28 +149,181 @@ export default function Demo() {
     return seal.slice(0, 32) // Simplified seal
   }
 
+  const jobId = useRef(`JOB-${Date.now()}`).current
+
+  const buildReportHtml = () => {
+    const seal = generateSeal()
+    const ts = new Date(jobData.timestamp)
+    const location = jobData.latitude
+      ? `${jobData.latitude.toFixed(6)}, ${jobData.longitude?.toFixed(6)}`
+      : 'Not captured'
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JobProof Report - ${jobId}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #1e293b; }
+  .page { max-width: 800px; margin: 0 auto; background: #fff; }
+  .header { background: linear-gradient(135deg, #1e40af, #3b82f6); color: #fff; padding: 40px; }
+  .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+  .header .subtitle { font-size: 14px; opacity: 0.85; }
+  .meta-bar { display: flex; flex-wrap: wrap; gap: 24px; padding: 20px 40px; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+  .meta-item { display: flex; flex-direction: column; gap: 2px; }
+  .meta-label { color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; }
+  .meta-value { color: #1e293b; font-weight: 500; }
+  .section { padding: 32px 40px; border-bottom: 1px solid #e2e8f0; }
+  .section-title { font-size: 16px; font-weight: 700; color: #1e40af; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .photos { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .photo-card { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+  .photo-card img { width: 100%; height: 280px; object-fit: cover; display: block; }
+  .photo-label { padding: 10px 14px; font-size: 12px; font-weight: 600; color: #475569; background: #f8fafc; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; }
+  .notes-text { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 20px; font-size: 14px; line-height: 1.6; color: #334155; white-space: pre-wrap; }
+  .location-box { display: flex; align-items: center; gap: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px 20px; }
+  .location-pin { width: 36px; height: 36px; background: #1e40af; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; flex-shrink: 0; }
+  .location-coords { font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace; font-size: 14px; color: #1e40af; }
+  .location-label { font-size: 11px; color: #64748b; }
+  .signature-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; text-align: center; }
+  .signature-box img { max-width: 320px; max-height: 160px; margin: 0 auto; display: block; }
+  .signature-label { font-size: 11px; color: #16a34a; margin-top: 8px; }
+  .seal-section { background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 20px; }
+  .seal-hash { font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace; font-size: 12px; color: #7c3aed; word-break: break-all; background: #f5f3ff; padding: 12px; border-radius: 6px; margin-top: 8px; }
+  .seal-note { font-size: 11px; color: #7c3aed; margin-top: 8px; }
+  .footer { padding: 24px 40px; background: #f8fafc; text-align: center; font-size: 11px; color: #94a3b8; }
+  @media print { body { background: #fff; } .page { box-shadow: none; } }
+  @media (max-width: 600px) { .photos { grid-template-columns: 1fr; } .header, .section, .meta-bar, .footer { padding-left: 20px; padding-right: 20px; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <h1>JobProof Report</h1>
+    <div class="subtitle">Tamper-proof work documentation</div>
+  </div>
+
+  <div class="meta-bar">
+    <div class="meta-item">
+      <span class="meta-label">Job ID</span>
+      <span class="meta-value">${jobId}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Date</span>
+      <span class="meta-value">${ts.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Time</span>
+      <span class="meta-value">${ts.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Exported</span>
+      <span class="meta-value">${new Date().toLocaleString()}</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Photo Evidence</div>
+    <div class="photos">
+      <div class="photo-card">
+        ${jobData.beforePhoto ? `<img src="${jobData.beforePhoto}" alt="Before" />` : '<div style="height:280px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;">No photo</div>'}
+        <div class="photo-label">Before</div>
+      </div>
+      <div class="photo-card">
+        ${jobData.afterPhoto ? `<img src="${jobData.afterPhoto}" alt="After" />` : '<div style="height:280px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;">No photo</div>'}
+        <div class="photo-label">After</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">GPS Location</div>
+    <div class="location-box">
+      <div class="location-pin">&#x1F4CD;</div>
+      <div>
+        <div class="location-coords">${location}</div>
+        <div class="location-label">${jobData.latitude ? `Latitude ${jobData.latitude.toFixed(6)}, Longitude ${jobData.longitude?.toFixed(6)}` : 'Location was not captured for this job'}</div>
+      </div>
+    </div>
+  </div>
+
+  ${jobData.notes ? `
+  <div class="section">
+    <div class="section-title">Work Notes</div>
+    <div class="notes-text">${jobData.notes.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+  </div>
+  ` : ''}
+
+  <div class="section">
+    <div class="section-title">Client Signature</div>
+    <div class="signature-box">
+      ${jobData.signature ? `<img src="${jobData.signature}" alt="Client Signature" /><div class="signature-label">Digitally signed by client</div>` : '<div style="color:#94a3b8;padding:20px;">No signature captured</div>'}
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Cryptographic Seal</div>
+    <div class="seal-section">
+      <div style="font-size:13px;color:#6b21a8;font-weight:600;">Integrity Verification</div>
+      <div class="seal-hash">${seal}</div>
+      <div class="seal-note">This cryptographic seal verifies that the contents of this report have not been tampered with since the time of creation.</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Generated by JobProof &mdash; Tamper-proof work documentation for construction professionals<br>
+    Report ID: ${jobId} &bull; ${new Date().toISOString()}
+  </div>
+</div>
+</body>
+</html>`
+  }
+
   const exportProof = () => {
-    const proof = {
-      job: {
-        id: `JOB-${Date.now()}`,
-        timestamp: new Date(jobData.timestamp).toISOString(),
-        location: jobData.latitude ? `${jobData.latitude.toFixed(6)}, ${jobData.longitude?.toFixed(6)}` : 'Unknown',
-        notes: jobData.notes,
-        sealed: generateSeal(),
-        signedBy: 'Client (Digital Signature)',
-        exportTime: new Date().toISOString()
-      }
-    }
-    
+    const html = buildReportHtml()
+    const blob = new Blob([html], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+
     const element = document.createElement('a')
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(JSON.stringify(proof, null, 2)))
-    element.setAttribute('download', `JobProof-${Date.now()}.json`)
+    element.href = url
+    element.download = `JobProof-${jobId}.html`
     element.style.display = 'none'
     document.body.appendChild(element)
     element.click()
     document.body.removeChild(element)
-    
+    URL.revokeObjectURL(url)
+
     setStep('export')
+  }
+
+  const [sendingEmail, setSendingEmail] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
+  const [emailAddress, setEmailAddress] = useState('')
+  const [emailError, setEmailError] = useState('')
+
+  const sendReport = async () => {
+    if (!emailAddress || !emailAddress.includes('@')) {
+      setEmailError('Please enter a valid email address.')
+      return
+    }
+    setSendingEmail(true)
+    setEmailError('')
+    try {
+      const html = buildReportHtml()
+      const res = await fetch('/api/send-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailAddress, html, jobId })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to send')
+      setEmailSent(true)
+    } catch (err: unknown) {
+      setEmailError(err instanceof Error ? err.message : 'Failed to send email. Try again.')
+    } finally {
+      setSendingEmail(false)
+    }
   }
 
   return (
@@ -519,45 +672,76 @@ export default function Demo() {
         {/* Export */}
         {step === 'export' && (
           <div className="mt-8 space-y-6">
-            <h2 className="text-2xl font-bold">✓ Complete!</h2>
-            
+            <h2 className="text-2xl font-bold">Report Downloaded</h2>
+
             <div className="bg-green-50 p-6 rounded-lg border border-green-200 text-center">
-              <p className="text-green-900 font-semibold text-lg mb-2">Proof file exported</p>
-              <p className="text-green-700 text-sm">Your sealed proof is ready to send to insurance or court.</p>
+              <p className="text-green-900 font-semibold text-lg mb-2">Your proof report has been saved</p>
+              <p className="text-green-700 text-sm">Open the HTML file in any browser to view or print your beautifully formatted report.</p>
             </div>
-            
+
+            <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
+              <h3 className="font-bold text-gray-900">Email Report</h3>
+              <p className="text-sm text-gray-600">Send a copy to your email, your client, or your attorney.</p>
+
+              {emailSent ? (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                  <p className="text-green-800 font-semibold">Report sent to {emailAddress}</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <input
+                    type="email"
+                    placeholder="email@example.com"
+                    value={emailAddress}
+                    onChange={(e) => { setEmailAddress(e.target.value); setEmailError('') }}
+                    className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-600 outline-none text-sm"
+                  />
+                  {emailError && (
+                    <p className="text-red-600 text-sm">{emailError}</p>
+                  )}
+                  <button
+                    onClick={sendReport}
+                    disabled={sendingEmail}
+                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {sendingEmail ? 'Sending...' : 'Send Report via Email'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={exportProof}
+              className="w-full border-2 border-gray-300 py-3 rounded-lg font-semibold hover:border-gray-400 text-sm"
+            >
+              Download Report Again
+            </button>
+
             <div className="bg-blue-50 p-6 rounded-lg space-y-3">
-              <h3 className="font-bold text-blue-900">What just happened:</h3>
+              <h3 className="font-bold text-blue-900">What&apos;s in your report:</h3>
               <ul className="text-sm text-blue-700 space-y-2">
-                <li>✓ Before & after photos captured</li>
-                <li>✓ GPS location & timestamp recorded</li>
-                <li>✓ Client digitally signed off</li>
-                <li>✓ Everything cryptographically sealed (tamper-proof)</li>
-                <li>✓ Exported as a court-ready proof file</li>
+                <li>Before & after photo evidence</li>
+                <li>GPS location & timestamp</li>
+                <li>Client digital signature</li>
+                <li>Cryptographic tamper-proof seal</li>
+                <li>Court-ready formatted document</li>
               </ul>
             </div>
-            
-            <div className="bg-gray-50 p-6 rounded-lg space-y-3">
-              <h3 className="font-bold text-gray-900">Next steps:</h3>
-              <ul className="text-sm text-gray-700 space-y-2">
-                <li>1️⃣ This works 100% offline - no WiFi needed</li>
-                <li>2️⃣ When you're back online, auto-sync happens</li>
-                <li>3️⃣ Send the proof file to insurance/attorney</li>
-                <li>4️⃣ The seal proves nothing was tampered with</li>
-              </ul>
-            </div>
-            
+
             <div className="space-y-3">
               <button
                 onClick={() => {
                   setStep('intro')
                   setJobData({ notes: '', timestamp: Date.now() })
+                  setEmailSent(false)
+                  setEmailAddress('')
+                  setEmailError('')
                 }}
                 className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700"
               >
-                Try Another Job
+                Start New Job
               </button>
-              
+
               <Link
                 href="/#email-form"
                 className="w-full border-2 border-blue-600 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50 text-center block"
