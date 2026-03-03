@@ -34,15 +34,18 @@ export default function Demo() {
     }
   }, [stream])
 
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream
+    }
+  }, [stream, step])
+
   const startCamera = async (type: 'before' | 'after') => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'environment' } 
       })
       setStream(mediaStream)
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream
-      }
       setStep(type === 'before' ? 'photo-before' : 'photo-after')
     } catch (err) {
       alert('Camera access denied. Using file upload instead.')
@@ -200,7 +203,20 @@ export default function Demo() {
 
       {/* Content */}
       <div className="max-w-2xl mx-auto p-4 pb-20">
-        
+
+        {/* Always-mounted hidden elements for camera/upload */}
+        <canvas ref={canvasRef} className="hidden" />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const type = step === 'photo-before' ? 'before' : 'after'
+            handlePhotoUpload(type, e)
+          }}
+        />
+
         {/* Intro */}
         {step === 'intro' && (
           <div className="mt-8 space-y-6">
@@ -268,15 +284,6 @@ export default function Demo() {
                 </button>
               </div>
             )}
-            
-            <canvas ref={canvasRef} className="hidden" />
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => handlePhotoUpload('before', e)}
-            />
           </div>
         )}
 
@@ -321,14 +328,6 @@ export default function Demo() {
                 </button>
               </div>
             )}
-            
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => handlePhotoUpload('after', e)}
-            />
           </div>
         )}
 
