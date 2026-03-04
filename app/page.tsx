@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { CheckIcon, ArrowRightIcon } from '@heroicons/react/20/solid'
 
 export default function Home() {
@@ -13,14 +12,12 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    
     try {
       const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
       })
-      
       if (res.ok) {
         setSubmitted(true)
         setEmail('')
@@ -35,52 +32,54 @@ export default function Home() {
   return (
     <>
       {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-sm border-b border-gray-200 z-50">
+      <nav className="fixed top-0 w-full bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="text-2xl font-bold text-blue-600">JobProof</div>
-          <div className="flex gap-6">
-            <a href="#features" className="text-gray-600 hover:text-gray-900">Features</a>
-            <a href="#pricing" className="text-gray-600 hover:text-gray-900">Pricing</a>
-            <a href="#faq" className="text-gray-600 hover:text-gray-900">FAQ</a>
-            <Link href="/demo" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+          <div className="text-xl font-bold text-white tracking-tight">JobProof</div>
+          <div className="hidden sm:flex items-center gap-6">
+            <a href="#features" className="text-stone-400 hover:text-white text-sm transition-colors">Features</a>
+            <a href="#pricing" className="text-stone-400 hover:text-white text-sm transition-colors">Pricing</a>
+            <a href="#faq" className="text-stone-400 hover:text-white text-sm transition-colors">FAQ</a>
+            <Link href="/demo" className="bg-amber-500 hover:bg-amber-600 text-slate-900 px-4 py-2 rounded-md text-sm font-bold transition-colors">
               Try Demo
             </Link>
           </div>
+          <Link href="/demo" className="sm:hidden bg-amber-500 hover:bg-amber-600 text-slate-900 px-4 py-2 rounded-md text-sm font-bold transition-colors">
+            Try Demo
+          </Link>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-16 px-4 bg-gradient-to-b from-blue-50 to-white">
+      <section className="pt-28 pb-16 px-4 bg-slate-900">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-            Never Lose a Lien Claim Again
+          <p className="text-amber-400 text-sm font-bold uppercase tracking-widest mb-4">Offline-First Field Evidence</p>
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
+            Never Lose a<br />Lien Claim Again
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg text-stone-400 mb-10 max-w-2xl mx-auto leading-relaxed">
             Cryptographically sealed before/after photos with GPS timestamps. Works completely offline. Proof that holds up in court.
           </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link href="/demo" className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2 text-lg font-semibold">
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10">
+            <Link href="/demo" className="bg-amber-500 hover:bg-amber-600 text-slate-900 px-8 py-4 rounded-md flex items-center justify-center gap-2 text-lg font-bold transition-colors">
               Try Free Demo
               <ArrowRightIcon className="w-5 h-5" />
             </Link>
-            <button onClick={() => document.getElementById('email-form')?.scrollIntoView({ behavior: 'smooth' })} className="border-2 border-gray-300 px-8 py-4 rounded-lg hover:border-gray-400 text-lg font-semibold">
+            <button onClick={() => document.getElementById('email-form')?.scrollIntoView({ behavior: 'smooth' })} className="border-2 border-stone-600 text-stone-300 px-8 py-4 rounded-md text-lg font-medium hover:border-stone-400 hover:text-white transition-colors">
               See How It Works
             </button>
           </div>
 
-          <div className="bg-blue-100 p-4 rounded-lg inline-block">
-            <p className="text-blue-900 font-semibold">✓ Used by 50+ construction teams</p>
-          </div>
+          <p className="text-stone-500 text-sm">Used by 50+ construction teams. No credit card required.</p>
         </div>
       </section>
 
       {/* Pain Points */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">The Problem</h2>
-          
-          <div className="grid md:grid-cols-3 gap-8">
+      <section className="py-16 px-4 bg-stone-50">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-2xl font-bold text-slate-900 text-center mb-10">The Problem</h2>
+
+          <div className="grid md:grid-cols-3 gap-6">
             {[
               {
                 title: 'Lost Evidence',
@@ -88,16 +87,16 @@ export default function Home() {
               },
               {
                 title: 'Disputed Work',
-                desc: 'Client says "that wasn\'t complete" or "we paid to fix it already." No documented proof.'
+                desc: "Client says it wasn't complete or claims they already paid to fix it. No documented proof."
               },
               {
                 title: 'Lien Claims Denied',
                 desc: 'Without timestamped, location-verified photos, your lien claim gets rejected. $50k+ loss.'
               }
             ].map((item, i) => (
-              <div key={i} className="p-6 bg-red-50 rounded-lg border border-red-200">
-                <h3 className="text-xl font-bold text-red-900 mb-3">{item.title}</h3>
-                <p className="text-red-700">{item.desc}</p>
+              <div key={i} className="bg-white rounded-md shadow-sm p-6 border-l-4 border-red-500">
+                <h3 className="text-lg font-bold text-slate-900 mb-2">{item.title}</h3>
+                <p className="text-stone-600 text-sm leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -105,68 +104,87 @@ export default function Home() {
       </section>
 
       {/* Solution */}
-      <section className="py-16 px-4 bg-blue-50">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">The Solution</h2>
-          
+      <section className="py-16 px-4 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-2xl font-bold text-slate-900 text-center mb-10">The Solution</h2>
+
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
+            <div className="space-y-4">
               {[
-                'Offline-first: Works even with no signal',
-                'GPS timestamp: Proof of location and time',
-                'Client signature: Digital sign-off on site',
-                'Crypto sealed: Tamper-proof proof file',
-                'Export ready: Courts and insurers accept it',
-                'Free trial: No credit card needed'
-              ].map((feature, i) => (
-                <div key={i} className="flex gap-3">
-                  <CheckIcon className="w-6 h-6 text-green-600 flex-shrink-0" />
-                  <p className="text-lg text-gray-700">{feature}</p>
+                { label: 'Offline-first', detail: 'Works even with no signal on the jobsite' },
+                { label: 'GPS timestamp', detail: 'Proof of location and time, automatic' },
+                { label: 'Client signature', detail: 'Digital sign-off on site, no paper' },
+                { label: 'Crypto sealed', detail: 'Tamper-proof — nobody can alter the evidence' },
+                { label: 'Export ready', detail: 'Courts and insurers accept the format' },
+                { label: 'Free trial', detail: '14 days, no credit card needed' },
+              ].map((f, i) => (
+                <div key={i} className="flex gap-3 items-start">
+                  <CheckIcon className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-slate-900 font-medium text-sm">{f.label}</p>
+                    <p className="text-stone-500 text-sm">{f.detail}</p>
+                  </div>
                 </div>
               ))}
             </div>
-            
-            <div className="bg-gray-200 rounded-lg h-96 flex items-center justify-center">
-              <p className="text-gray-500">Demo Screenshot: Before/After Photo Pair</p>
+
+            <div className="bg-slate-900 rounded-md p-8 text-center">
+              <div className="bg-slate-800 rounded p-6 space-y-3">
+                <div className="flex gap-2 justify-center">
+                  <div className="w-20 h-14 bg-stone-700 rounded flex items-center justify-center text-[10px] text-stone-400 font-bold uppercase">Before</div>
+                  <div className="w-20 h-14 bg-stone-700 rounded flex items-center justify-center text-[10px] text-stone-400 font-bold uppercase">After</div>
+                </div>
+                <div className="text-amber-400 font-mono text-xs">38.9072, -77.0369</div>
+                <div className="text-stone-500 text-xs">Cryptographically sealed</div>
+                <div className="text-emerald-400 text-xs font-bold">Client signed</div>
+              </div>
+              <p className="text-stone-500 text-xs mt-4">Court-ready proof file</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Case Study */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-4xl mx-auto bg-green-50 rounded-lg p-8 border border-green-200">
-          <h2 className="text-2xl font-bold text-green-900 mb-4">Case Study: Roofing Job Dispute</h2>
-          <p className="text-gray-700 mb-4">
-            <strong>Problem:</strong> Johnson Roofing completed a $45k roof repair. Client disputed completion, claimed work was incomplete. Without before/after photos, the contractor couldn't prove the work was done. Lien claim denied. Lost $45k.
-          </p>
-          <p className="text-gray-700 mb-4">
-            <strong>With JobProof:</strong> Same scenario. Crew takes before photo (offline). Client signs off on-site (no WiFi needed). GPS timestamp added. File sealed cryptographically. Uploaded to insurance company. Claim approved in 48 hours. $45k collected.
-          </p>
-          <p className="text-green-700 font-bold text-lg">
-            💰 Result: $45,000 protected. Recovery time: 48 hours instead of months.
-          </p>
+      <section className="py-16 px-4 bg-stone-50">
+        <div className="max-w-3xl mx-auto">
+          <div className="bg-white rounded-md shadow-sm border border-stone-200 overflow-hidden">
+            <div className="bg-slate-900 px-6 py-4">
+              <p className="text-amber-400 text-xs font-bold uppercase tracking-wider">Case Study</p>
+              <h2 className="text-lg font-bold text-white mt-1">Roofing Job Dispute &mdash; $45,000 Protected</h2>
+            </div>
+            <div className="p-6 space-y-4 text-sm leading-relaxed">
+              <p className="text-stone-700">
+                <span className="font-bold text-slate-900">Without JobProof:</span> Johnson Roofing completed a $45k roof repair. Client disputed completion. No before/after photos. Lien claim denied. Lost $45,000.
+              </p>
+              <p className="text-stone-700">
+                <span className="font-bold text-slate-900">With JobProof:</span> Crew takes before photo offline. Client signs off on-site. GPS timestamp added. File sealed cryptographically. Claim approved in 48 hours.
+              </p>
+              <div className="bg-emerald-50 border border-emerald-200 rounded-md p-4">
+                <p className="text-emerald-800 font-bold">$45,000 protected. 48 hours instead of months.</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="py-16 px-4 bg-gray-50">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
-          
+      {/* How It Works */}
+      <section id="features" className="py-16 px-4 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-2xl font-bold text-slate-900 text-center mb-10">How It Works</h2>
+
           <div className="grid md:grid-cols-4 gap-8">
             {[
               { num: '1', title: 'Crew Gets Link', desc: 'Manager sends job link via text or email' },
-              { num: '2', title: 'Photo & GPS', desc: 'Crew captures before/after photos (works offline)' },
-              { num: '3', title: 'Client Signs', desc: 'Client digitally signs on tablet/phone on-site' },
-              { num: '4', title: 'Sealed & Sent', desc: 'When online, proof file uploads automatically' }
-            ].map((step, i) => (
+              { num: '2', title: 'Photo & GPS', desc: 'Crew captures before/after photos offline' },
+              { num: '3', title: 'Client Signs', desc: 'Digital sign-off right on the phone' },
+              { num: '4', title: 'Sealed & Sent', desc: 'Proof file uploads when back online' }
+            ].map((s, i) => (
               <div key={i} className="text-center">
-                <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
-                  {step.num}
+                <div className="w-10 h-10 bg-amber-500 text-slate-900 rounded-full flex items-center justify-center mx-auto mb-3 text-sm font-bold">
+                  {s.num}
                 </div>
-                <h3 className="font-bold text-lg mb-2">{step.title}</h3>
-                <p className="text-gray-600 text-sm">{step.desc}</p>
+                <h3 className="font-bold text-slate-900 text-sm mb-1">{s.title}</h3>
+                <p className="text-stone-500 text-xs">{s.desc}</p>
               </div>
             ))}
           </div>
@@ -174,47 +192,58 @@ export default function Home() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-16 px-4 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">Simple Pricing</h2>
-          
-          <div className="grid md:grid-cols-3 gap-8">
+      <section id="pricing" className="py-16 px-4 bg-stone-50">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-2xl font-bold text-slate-900 text-center mb-10">Simple Pricing</h2>
+
+          <div className="grid md:grid-cols-3 gap-6">
             {[
-              { 
-                name: 'Solo', 
-                price: '$29/month', 
+              {
+                name: 'Solo',
+                price: '$29',
+                period: '/month',
                 desc: 'For individual contractors',
                 features: ['Unlimited jobs', 'Offline-first', 'GPS + crypto seal', 'Email support']
               },
-              { 
-                name: 'Team', 
-                price: '$99/month', 
+              {
+                name: 'Team',
+                price: '$99',
+                period: '/month',
                 desc: 'For small crews',
                 features: ['5 team members', 'All Solo features', 'Manager dashboard', 'Lien-ready exports', 'Priority support'],
                 highlight: true
               },
-              { 
-                name: 'Enterprise', 
-                price: 'Custom', 
+              {
+                name: 'Enterprise',
+                price: 'Custom',
+                period: '',
                 desc: 'For large contractors',
                 features: ['Unlimited team members', 'All Team features', 'API access', 'Compliance reports', 'Dedicated support']
               }
             ].map((plan, i) => (
-              <div key={i} className={`rounded-lg border-2 p-8 ${plan.highlight ? 'border-blue-600 bg-blue-50' : 'border-gray-200'}`}>
-                <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-                <p className="text-3xl font-bold text-blue-600 mb-2">{plan.price}</p>
-                <p className="text-gray-600 mb-6">{plan.desc}</p>
-                <ul className="space-y-3 mb-6">
-                  {plan.features.map((f, j) => (
-                    <li key={j} className="flex gap-2">
-                      <CheckIcon className="w-5 h-5 text-green-600 flex-shrink-0" />
-                      <span className="text-sm">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <button className={`w-full py-2 rounded-lg font-semibold ${plan.highlight ? 'bg-blue-600 text-white hover:bg-blue-700' : 'border-2 border-gray-300 hover:border-gray-400'}`}>
-                  Get Started
-                </button>
+              <div key={i} className={`rounded-md overflow-hidden ${plan.highlight ? 'shadow-lg ring-2 ring-amber-500' : 'shadow-sm border border-stone-200'}`}>
+                {plan.highlight && (
+                  <div className="bg-amber-500 text-slate-900 text-center py-1.5 text-xs font-bold uppercase tracking-wider">Most Popular</div>
+                )}
+                <div className={`p-6 bg-white ${plan.highlight ? '' : ''}`}>
+                  <h3 className="text-lg font-bold text-slate-900">{plan.name}</h3>
+                  <div className="mt-2 mb-1">
+                    <span className="text-3xl font-bold text-slate-900">{plan.price}</span>
+                    <span className="text-stone-500 text-sm">{plan.period}</span>
+                  </div>
+                  <p className="text-stone-500 text-sm mb-5">{plan.desc}</p>
+                  <ul className="space-y-2.5 mb-6">
+                    {plan.features.map((f, j) => (
+                      <li key={j} className="flex gap-2 items-center">
+                        <CheckIcon className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                        <span className="text-sm text-stone-700">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <button className={`w-full py-2.5 rounded-md font-bold text-sm transition-colors ${plan.highlight ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-slate-900 hover:bg-slate-800 text-white'}`}>
+                    Get Started
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -222,16 +251,15 @@ export default function Home() {
       </section>
 
       {/* Email Capture */}
-      <section id="email-form" className="py-16 px-4 bg-blue-600 text-white">
+      <section id="email-form" className="py-16 px-4 bg-slate-900">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4">Try Free for 14 Days</h2>
-          <p className="text-blue-100 mb-8">No credit card. No strings. Offline demo works immediately.</p>
-          
+          <h2 className="text-2xl font-bold text-white mb-3">Try Free for 14 Days</h2>
+          <p className="text-stone-400 mb-8 text-sm">No credit card. No strings. Offline demo works immediately.</p>
+
           {submitted ? (
-            <div className="bg-green-100 text-green-900 p-6 rounded-lg">
-              <p className="text-lg font-semibold mb-2">✓ Check your email!</p>
-              <p>We've sent you a link to the free demo. Download and use offline, no WiFi required.</p>
-              <p className="text-sm mt-4 opacity-80">You'll also get 5 emails over the next week showing you how crews are saving money with JobProof.</p>
+            <div className="bg-emerald-900/30 border border-emerald-700 text-emerald-200 p-6 rounded-md">
+              <p className="font-bold mb-1">Check your email</p>
+              <p className="text-sm">We&apos;ve sent you a link to get started. Works offline immediately.</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
@@ -241,12 +269,12 @@ export default function Home() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="flex-1 px-4 py-3 rounded-lg text-gray-900"
+                className="flex-1 px-4 py-3 rounded-md text-slate-900 bg-white text-sm"
               />
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 disabled:opacity-50"
+                className="bg-amber-500 hover:bg-amber-600 text-slate-900 px-8 py-3 rounded-md font-bold text-sm disabled:opacity-50 transition-colors"
               >
                 {loading ? 'Sending...' : 'Get Access'}
               </button>
@@ -256,36 +284,36 @@ export default function Home() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="py-16 px-4 bg-gray-50">
+      <section id="faq" className="py-16 px-4 bg-white">
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">FAQ</h2>
-          
-          <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-slate-900 text-center mb-10">FAQ</h2>
+
+          <div className="space-y-4">
             {[
               {
-                q: "Does it really work offline?",
+                q: 'Does it really work offline?',
                 a: "Yes, 100%. Photos, GPS, signatures, and crypto seal all work without internet. When you're back online, everything syncs automatically."
               },
               {
-                q: "Is the proof admissible in court?",
-                a: "Yes. The cryptographic seal makes it tamper-proof. GPS timestamp proves location and time. We provide an export format ready for court/insurance."
+                q: 'Is the proof admissible in court?',
+                a: 'Yes. The cryptographic seal makes it tamper-proof. GPS timestamp proves location and time. Export format is ready for court and insurance.'
               },
               {
-                q: "What if my crew forgets to sync?",
-                a: "Data syncs automatically when they connect to WiFi. If they don't, they can manually sync from the app. All data is cached locally."
+                q: 'What if my crew forgets to sync?',
+                a: 'Data syncs automatically when they connect to WiFi. All data is cached locally and persists even if the app is closed.'
               },
               {
-                q: "Can clients sign on-site without WiFi?",
-                a: "Yes. Signature pad works completely offline. They sign right on the phone/tablet at the job site."
+                q: 'Can clients sign on-site without WiFi?',
+                a: 'Yes. Signature pad works completely offline. They sign right on the phone or tablet at the job site.'
               },
               {
-                q: "How much does it cost?",
-                a: "From $29/month for solo contractors to $99/month for teams. Try 14 days free, no credit card."
+                q: 'How much does it cost?',
+                a: 'From $29/month for solo contractors to $99/month for teams. Try 14 days free, no credit card.'
               }
             ].map((faq, i) => (
-              <div key={i} className="bg-white p-6 rounded-lg border border-gray-200">
-                <h3 className="font-bold text-lg mb-2">{faq.q}</h3>
-                <p className="text-gray-700">{faq.a}</p>
+              <div key={i} className="bg-stone-50 p-5 rounded-md">
+                <h3 className="font-bold text-slate-900 text-sm mb-1">{faq.q}</h3>
+                <p className="text-stone-600 text-sm leading-relaxed">{faq.a}</p>
               </div>
             ))}
           </div>
@@ -293,10 +321,10 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-8 px-4">
-        <div className="max-w-6xl mx-auto text-center text-sm">
-          <p>&copy; 2026 JobProof. Never lose a lien claim again.</p>
-          <p className="mt-2">Protecting construction crews and securing $millions in lien claims.</p>
+      <footer className="bg-slate-900 text-stone-500 py-8 px-4 border-t border-slate-800">
+        <div className="max-w-6xl mx-auto text-center text-xs">
+          <p className="text-stone-400 font-medium">&copy; 2026 JobProof</p>
+          <p className="mt-1">Protecting construction crews and securing lien claims.</p>
         </div>
       </footer>
     </>

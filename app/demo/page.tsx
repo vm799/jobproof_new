@@ -1,10 +1,26 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { ArrowLeftIcon, CameraIcon, MapPinIcon, PencilIcon, CheckIcon } from '@heroicons/react/20/solid'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { ArrowLeftIcon, CameraIcon, MapPinIcon, CheckIcon } from '@heroicons/react/20/solid'
 import Link from 'next/link'
+import { saveJob, loadLatestJob, deleteJob, addToOutbox, getOutboxPending, removeFromOutbox } from '@/lib/db'
+import type { PersistedJob } from '@/lib/db'
+import { useOnlineStatus } from '@/lib/useOnlineStatus'
 
 type Step = 'intro' | 'photo-before' | 'photo-after' | 'location' | 'notes' | 'signature' | 'review' | 'export'
+
+const STEPS: Step[] = ['intro', 'photo-before', 'photo-after', 'location', 'notes', 'signature', 'review', 'export']
+
+const STEP_LABELS: Record<Step, string> = {
+  'intro': 'Start',
+  'photo-before': 'Before',
+  'photo-after': 'After',
+  'location': 'Location',
+  'notes': 'Notes',
+  'signature': 'Signature',
+  'review': 'Review',
+  'export': 'Done',
+}
 
 interface JobData {
   beforePhoto?: string
@@ -14,87 +30,121 @@ interface JobData {
   notes: string
   signature?: string
   timestamp: number
-  w3w?: string
 }
 
 export default function Demo() {
   const [step, setStep] = useState<Step>('intro')
   const [jobData, setJobData] = useState<JobData>({ notes: '', timestamp: Date.now() })
   const [stream, setStream] = useState<MediaStream | null>(null)
+  const [restored, setRestored] = useState(false)
+  const [pendingEmails, setPendingEmails] = useState(0)
+
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const signatureCanvasRef = useRef<HTMLCanvasElement>(null)
+  const jobIdRef = useRef(`JOB-${Date.now()}`)
 
+  const { isOnline } = useOnlineStatus()
+
+  // Auto-restore from IndexedDB on mount
   useEffect(() => {
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop())
+    loadLatestJob().then(job => {
+      if (job && job.step !== 'export') {
+        jobIdRef.current = job.id
+        setStep(job.step as Step)
+        setJobData({
+          beforePhoto: job.beforePhoto,
+          afterPhoto: job.afterPhoto,
+          latitude: job.latitude,
+          longitude: job.longitude,
+          notes: job.notes,
+          signature: job.signature,
+          timestamp: job.timestamp,
+        })
       }
+      setRestored(true)
+    }).catch(() => setRestored(true))
+
+    getOutboxPending().then(entries => setPendingEmails(entries.length)).catch(() => {})
+  }, [])
+
+  // Auto-save to IndexedDB on step/data changes
+  const persist = useCallback(() => {
+    if (!restored) return
+    const job: PersistedJob = {
+      id: jobIdRef.current,
+      step,
+      ...jobData,
     }
+    saveJob(job).catch(() => {})
+  }, [step, jobData, restored])
+
+  useEffect(() => { persist() }, [persist])
+
+  // Flush outbox when coming online
+  useEffect(() => {
+    if (!isOnline) return
+    const flush = async () => {
+      const entries = await getOutboxPending()
+      for (const entry of entries) {
+        try {
+          const res = await fetch('/api/send-report', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: entry.email, html: entry.html, jobId: entry.jobId })
+          })
+          if (res.ok && entry.id != null) {
+            await removeFromOutbox(entry.id)
+          }
+        } catch { /* will retry next time */ }
+      }
+      const remaining = await getOutboxPending()
+      setPendingEmails(remaining.length)
+    }
+    flush()
+  }, [isOnline])
+
+  // Camera stream cleanup
+  useEffect(() => {
+    return () => { stream?.getTracks().forEach(t => t.stop()) }
   }, [stream])
 
   useEffect(() => {
-    if (videoRef.current && stream) {
-      videoRef.current.srcObject = stream
-    }
+    if (videoRef.current && stream) videoRef.current.srcObject = stream
   }, [stream, step])
 
   const startCamera = async (type: 'before' | 'after') => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
-      })
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
       setStream(mediaStream)
       setStep(type === 'before' ? 'photo-before' : 'photo-after')
-    } catch (err) {
-      alert('Camera access denied. Using file upload instead.')
+    } catch {
+      alert('Camera access denied. Use file upload instead.')
     }
   }
 
   const capturePhoto = (type: 'before' | 'after') => {
     if (!canvasRef.current || !videoRef.current) return
-    
     const context = canvasRef.current.getContext('2d')
     if (!context) return
-    
     canvasRef.current.width = videoRef.current.videoWidth
     canvasRef.current.height = videoRef.current.videoHeight
     context.drawImage(videoRef.current, 0, 0)
-    
     const photo = canvasRef.current.toDataURL('image/jpeg')
-    setJobData(prev => ({
-      ...prev,
-      [type === 'before' ? 'beforePhoto' : 'afterPhoto']: photo
-    }))
-    
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop())
-      setStream(null)
-    }
-    
-    if (type === 'before') {
-      setStep('photo-after')
-    } else {
-      setStep('location')
-    }
+    setJobData(prev => ({ ...prev, [type === 'before' ? 'beforePhoto' : 'afterPhoto']: photo }))
+    stream?.getTracks().forEach(t => t.stop())
+    setStream(null)
+    setStep(type === 'before' ? 'photo-after' : 'location')
   }
 
   const handlePhotoUpload = (type: 'before' | 'after', e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    
     const reader = new FileReader()
     reader.onload = (event) => {
-      setJobData(prev => ({
-        ...prev,
-        [type === 'before' ? 'beforePhoto' : 'afterPhoto']: event.target?.result
-      }))
-      if (type === 'before') {
-        setStep('photo-after')
-      } else {
-        setStep('location')
-      }
+      setJobData(prev => ({ ...prev, [type === 'before' ? 'beforePhoto' : 'afterPhoto']: event.target?.result as string }))
+      setStep(type === 'before' ? 'photo-after' : 'location')
     }
     reader.readAsDataURL(file)
   }
@@ -102,22 +152,13 @@ export default function Demo() {
   const getLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setJobData(prev => ({
-            ...prev,
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          }))
+        (pos) => {
+          setJobData(prev => ({ ...prev, latitude: pos.coords.latitude, longitude: pos.coords.longitude }))
           setStep('notes')
         },
-        () => {
-          alert('Location access denied. Continuing without GPS.')
-          setStep('notes')
-        }
+        () => { setStep('notes') }
       )
-    } else {
-      setStep('notes')
-    }
+    } else { setStep('notes') }
   }
 
   const handleSignature = () => {
@@ -129,14 +170,11 @@ export default function Demo() {
 
   const clearSignature = () => {
     if (!signatureCanvasRef.current) return
-    const context = signatureCanvasRef.current.getContext('2d')
-    if (context) {
-      context.clearRect(0, 0, signatureCanvasRef.current.width, signatureCanvasRef.current.height)
-    }
+    const ctx = signatureCanvasRef.current.getContext('2d')
+    if (ctx) ctx.clearRect(0, 0, signatureCanvasRef.current.width, signatureCanvasRef.current.height)
   }
 
   const generateSeal = () => {
-    // Simple crypto seal (in production, use TweetNaCl.js)
     const data = JSON.stringify({
       beforePhoto: jobData.beforePhoto?.slice(0, 50),
       afterPhoto: jobData.afterPhoto?.slice(0, 50),
@@ -145,18 +183,15 @@ export default function Demo() {
       notes: jobData.notes,
       timestamp: jobData.timestamp
     })
-    const seal = btoa(data) // Base64 encode
-    return seal.slice(0, 32) // Simplified seal
+    return btoa(data).slice(0, 32)
   }
 
-  const jobId = useRef(`JOB-${Date.now()}`).current
+  const jobId = jobIdRef.current
 
   const buildReportHtml = () => {
     const seal = generateSeal()
     const ts = new Date(jobData.timestamp)
-    const location = jobData.latitude
-      ? `${jobData.latitude.toFixed(6)}, ${jobData.longitude?.toFixed(6)}`
-      : 'Not captured'
+    const location = jobData.latitude ? `${jobData.latitude.toFixed(6)}, ${jobData.longitude?.toFixed(6)}` : 'Not captured'
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -164,35 +199,38 @@ export default function Demo() {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JobProof Report - ${jobId}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #1e293b; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: #fafaf9; color: #18181b; }
   .page { max-width: 800px; margin: 0 auto; background: #fff; }
-  .header { background: linear-gradient(135deg, #1e40af, #3b82f6); color: #fff; padding: 40px; }
+  .header { background: linear-gradient(135deg, #141422, #1e1e2e); color: #fff; padding: 40px; }
   .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
-  .header .subtitle { font-size: 14px; opacity: 0.85; }
-  .meta-bar { display: flex; flex-wrap: wrap; gap: 24px; padding: 20px 40px; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+  .header .subtitle { font-size: 14px; color: #fbbf24; font-weight: 500; }
+  .meta-bar { display: flex; flex-wrap: wrap; gap: 24px; padding: 20px 40px; background: #f5f5f4; border-bottom: 1px solid #e7e5e4; font-size: 13px; }
   .meta-item { display: flex; flex-direction: column; gap: 2px; }
-  .meta-label { color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; }
-  .meta-value { color: #1e293b; font-weight: 500; }
-  .section { padding: 32px 40px; border-bottom: 1px solid #e2e8f0; }
-  .section-title { font-size: 16px; font-weight: 700; color: #1e40af; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .meta-label { color: #78716c; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; }
+  .meta-value { color: #18181b; font-weight: 500; }
+  .section { padding: 32px 40px; border-bottom: 1px solid #e7e5e4; }
+  .section-title { font-size: 14px; font-weight: 700; color: #d97706; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
   .photos { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  .photo-card { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+  .photo-card { border: 1px solid #e7e5e4; border-radius: 6px; overflow: hidden; }
   .photo-card img { width: 100%; height: 280px; object-fit: cover; display: block; }
-  .photo-label { padding: 10px 14px; font-size: 12px; font-weight: 600; color: #475569; background: #f8fafc; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; }
-  .notes-text { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 20px; font-size: 14px; line-height: 1.6; color: #334155; white-space: pre-wrap; }
-  .location-box { display: flex; align-items: center; gap: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px 20px; }
-  .location-pin { width: 36px; height: 36px; background: #1e40af; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; flex-shrink: 0; }
-  .location-coords { font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace; font-size: 14px; color: #1e40af; }
-  .location-label { font-size: 11px; color: #64748b; }
-  .signature-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; text-align: center; }
+  .photo-label { padding: 10px 14px; font-size: 11px; font-weight: 700; color: #44403c; background: #f5f5f4; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
+  .notes-text { background: #f5f5f4; border: 1px solid #e7e5e4; border-radius: 6px; padding: 16px 20px; font-size: 14px; line-height: 1.6; color: #292524; white-space: pre-wrap; }
+  .location-box { display: flex; align-items: center; gap: 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 16px 20px; }
+  .location-pin { width: 36px; height: 36px; background: #d97706; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; flex-shrink: 0; }
+  .location-coords { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #92400e; font-weight: 500; }
+  .location-label { font-size: 11px; color: #78716c; }
+  .signature-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 20px; text-align: center; }
   .signature-box img { max-width: 320px; max-height: 160px; margin: 0 auto; display: block; }
-  .signature-label { font-size: 11px; color: #16a34a; margin-top: 8px; }
-  .seal-section { background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 20px; }
-  .seal-hash { font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace; font-size: 12px; color: #7c3aed; word-break: break-all; background: #f5f3ff; padding: 12px; border-radius: 6px; margin-top: 8px; }
-  .seal-note { font-size: 11px; color: #7c3aed; margin-top: 8px; }
-  .footer { padding: 24px 40px; background: #f8fafc; text-align: center; font-size: 11px; color: #94a3b8; }
+  .signature-label { font-size: 11px; color: #16a34a; margin-top: 8px; font-weight: 500; }
+  .seal-section { background: #1e1e2e; border-radius: 6px; padding: 20px; }
+  .seal-title { font-size: 12px; color: #fbbf24; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+  .seal-hash { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a5b4fc; word-break: break-all; background: #141422; padding: 12px; border-radius: 4px; margin-top: 8px; }
+  .seal-note { font-size: 11px; color: #a1a1aa; margin-top: 8px; }
+  .footer { padding: 24px 40px; background: #141422; text-align: center; font-size: 11px; color: #71717a; }
   @media print { body { background: #fff; } .page { box-shadow: none; } }
   @media (max-width: 600px) { .photos { grid-template-columns: 1fr; } .header, .section, .meta-bar, .footer { padding-left: 20px; padding-right: 20px; } }
 </style>
@@ -201,80 +239,53 @@ export default function Demo() {
 <div class="page">
   <div class="header">
     <h1>JobProof Report</h1>
-    <div class="subtitle">Tamper-proof work documentation</div>
+    <div class="subtitle">Tamper-Proof Work Documentation</div>
   </div>
-
   <div class="meta-bar">
-    <div class="meta-item">
-      <span class="meta-label">Job ID</span>
-      <span class="meta-value">${jobId}</span>
-    </div>
-    <div class="meta-item">
-      <span class="meta-label">Date</span>
-      <span class="meta-value">${ts.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-    </div>
-    <div class="meta-item">
-      <span class="meta-label">Time</span>
-      <span class="meta-value">${ts.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
-    </div>
-    <div class="meta-item">
-      <span class="meta-label">Exported</span>
-      <span class="meta-value">${new Date().toLocaleString()}</span>
-    </div>
+    <div class="meta-item"><span class="meta-label">Job ID</span><span class="meta-value">${jobId}</span></div>
+    <div class="meta-item"><span class="meta-label">Date</span><span class="meta-value">${ts.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
+    <div class="meta-item"><span class="meta-label">Time</span><span class="meta-value">${ts.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span></div>
+    <div class="meta-item"><span class="meta-label">Exported</span><span class="meta-value">${new Date().toLocaleString()}</span></div>
   </div>
-
   <div class="section">
     <div class="section-title">Photo Evidence</div>
     <div class="photos">
       <div class="photo-card">
-        ${jobData.beforePhoto ? `<img src="${jobData.beforePhoto}" alt="Before" />` : '<div style="height:280px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;">No photo</div>'}
+        ${jobData.beforePhoto ? `<img src="${jobData.beforePhoto}" alt="Before" />` : '<div style="height:280px;background:#f5f5f4;display:flex;align-items:center;justify-content:center;color:#a8a29e;">No photo</div>'}
         <div class="photo-label">Before</div>
       </div>
       <div class="photo-card">
-        ${jobData.afterPhoto ? `<img src="${jobData.afterPhoto}" alt="After" />` : '<div style="height:280px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;">No photo</div>'}
+        ${jobData.afterPhoto ? `<img src="${jobData.afterPhoto}" alt="After" />` : '<div style="height:280px;background:#f5f5f4;display:flex;align-items:center;justify-content:center;color:#a8a29e;">No photo</div>'}
         <div class="photo-label">After</div>
       </div>
     </div>
   </div>
-
   <div class="section">
     <div class="section-title">GPS Location</div>
     <div class="location-box">
       <div class="location-pin">&#x1F4CD;</div>
       <div>
         <div class="location-coords">${location}</div>
-        <div class="location-label">${jobData.latitude ? `Latitude ${jobData.latitude.toFixed(6)}, Longitude ${jobData.longitude?.toFixed(6)}` : 'Location was not captured for this job'}</div>
+        <div class="location-label">${jobData.latitude ? `Lat ${jobData.latitude.toFixed(6)}, Lon ${jobData.longitude?.toFixed(6)}` : 'Location was not captured for this job'}</div>
       </div>
     </div>
   </div>
-
-  ${jobData.notes ? `
-  <div class="section">
-    <div class="section-title">Work Notes</div>
-    <div class="notes-text">${jobData.notes.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
-  </div>
-  ` : ''}
-
+  ${jobData.notes ? `<div class="section"><div class="section-title">Work Notes</div><div class="notes-text">${jobData.notes.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div></div>` : ''}
   <div class="section">
     <div class="section-title">Client Signature</div>
     <div class="signature-box">
-      ${jobData.signature ? `<img src="${jobData.signature}" alt="Client Signature" /><div class="signature-label">Digitally signed by client</div>` : '<div style="color:#94a3b8;padding:20px;">No signature captured</div>'}
+      ${jobData.signature ? `<img src="${jobData.signature}" alt="Client Signature" /><div class="signature-label">Digitally signed by client</div>` : '<div style="color:#a8a29e;padding:20px;">No signature captured</div>'}
     </div>
   </div>
-
   <div class="section">
     <div class="section-title">Cryptographic Seal</div>
     <div class="seal-section">
-      <div style="font-size:13px;color:#6b21a8;font-weight:600;">Integrity Verification</div>
+      <div class="seal-title">Integrity Verification</div>
       <div class="seal-hash">${seal}</div>
-      <div class="seal-note">This cryptographic seal verifies that the contents of this report have not been tampered with since the time of creation.</div>
+      <div class="seal-note">This cryptographic seal verifies that the contents of this report have not been tampered with since creation.</div>
     </div>
   </div>
-
-  <div class="footer">
-    Generated by JobProof &mdash; Tamper-proof work documentation for construction professionals<br>
-    Report ID: ${jobId} &bull; ${new Date().toISOString()}
-  </div>
+  <div class="footer">Generated by JobProof &mdash; Tamper-proof work documentation for construction professionals<br>Report ID: ${jobId} &bull; ${new Date().toISOString()}</div>
 </div>
 </body>
 </html>`
@@ -284,16 +295,14 @@ export default function Demo() {
     const html = buildReportHtml()
     const blob = new Blob([html], { type: 'text/html' })
     const url = URL.createObjectURL(blob)
-
-    const element = document.createElement('a')
-    element.href = url
-    element.download = `JobProof-${jobId}.html`
-    element.style.display = 'none'
-    document.body.appendChild(element)
-    element.click()
-    document.body.removeChild(element)
+    const el = document.createElement('a')
+    el.href = url
+    el.download = `JobProof-${jobId}.html`
+    el.style.display = 'none'
+    document.body.appendChild(el)
+    el.click()
+    document.body.removeChild(el)
     URL.revokeObjectURL(url)
-
     setStep('export')
   }
 
@@ -304,13 +313,29 @@ export default function Demo() {
 
   const sendReport = async () => {
     if (!emailAddress || !emailAddress.includes('@')) {
-      setEmailError('Please enter a valid email address.')
+      setEmailError('Enter a valid email address.')
       return
     }
     setSendingEmail(true)
     setEmailError('')
+
+    const html = buildReportHtml()
+
+    if (!isOnline) {
+      try {
+        await addToOutbox({ email: emailAddress, html, jobId, createdAt: Date.now() })
+        const entries = await getOutboxPending()
+        setPendingEmails(entries.length)
+        setEmailSent(true)
+      } catch {
+        setEmailError('Failed to queue email.')
+      } finally {
+        setSendingEmail(false)
+      }
+      return
+    }
+
     try {
-      const html = buildReportHtml()
       const res = await fetch('/api/send-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -320,36 +345,58 @@ export default function Demo() {
       if (!res.ok) throw new Error(data.error || 'Failed to send')
       setEmailSent(true)
     } catch (err: unknown) {
-      setEmailError(err instanceof Error ? err.message : 'Failed to send email. Try again.')
+      setEmailError(err instanceof Error ? err.message : 'Failed to send. Try again.')
     } finally {
       setSendingEmail(false)
     }
   }
 
+  const startNewJob = () => {
+    deleteJob(jobIdRef.current).catch(() => {})
+    jobIdRef.current = `JOB-${Date.now()}`
+    setStep('intro')
+    setJobData({ notes: '', timestamp: Date.now() })
+    setEmailSent(false)
+    setEmailAddress('')
+    setEmailError('')
+  }
+
+  const stepIndex = STEPS.indexOf(step)
+  const progress = ((stepIndex + 1) / STEPS.length) * 100
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-stone-50">
       {/* Header */}
-      <div className="bg-blue-600 text-white p-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 hover:opacity-80">
-          <ArrowLeftIcon className="w-5 h-5" />
+      <div className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2 text-stone-300 hover:text-white transition-colors text-sm">
+          <ArrowLeftIcon className="w-4 h-4" />
           Back
         </Link>
-        <h1 className="text-lg font-bold">JobProof Demo</h1>
-        <div className="w-5"></div>
+        <h1 className="text-sm font-bold tracking-wide uppercase">JobProof</h1>
+        <div className="flex items-center gap-2">
+          {!isOnline && (
+            <span className="text-xs bg-amber-500 text-slate-900 px-2 py-0.5 rounded font-bold">OFFLINE</span>
+          )}
+          <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" title={isOnline ? 'Online' : 'Offline'} style={{ backgroundColor: isOnline ? '#34d399' : '#fbbf24' }}></span>
+        </div>
       </div>
 
+      {/* Offline banner */}
+      {!isOnline && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-center">
+          <p className="text-amber-800 text-xs font-medium">You&apos;re offline &mdash; all data is saved locally on this device</p>
+        </div>
+      )}
+
       {/* Progress */}
-      <div className="bg-white border-b p-4">
+      <div className="bg-white border-b border-stone-200 px-4 py-3">
         <div className="max-w-2xl mx-auto">
-          <div className="flex justify-between text-xs text-gray-600 mb-2">
-            <span>Step {['intro', 'photo-before', 'photo-after', 'location', 'notes', 'signature', 'review', 'export'].indexOf(step) + 1} / 8</span>
-            <span>{step === 'export' ? 'Complete!' : 'In Progress'}</span>
+          <div className="flex justify-between text-xs mb-2">
+            <span className="text-stone-500 font-medium">{STEP_LABELS[step]}</span>
+            <span className="text-stone-400">{stepIndex + 1} / {STEPS.length}</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-blue-600 h-2 rounded-full transition-all" 
-              style={{ width: `${((['intro', 'photo-before', 'photo-after', 'location', 'notes', 'signature', 'review', 'export'].indexOf(step) + 1) / 8) * 100}%` }}
-            ></div>
+          <div className="w-full bg-stone-200 rounded-full h-1.5">
+            <div className="bg-amber-500 h-1.5 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
           </div>
         </div>
       </div>
@@ -357,81 +404,79 @@ export default function Demo() {
       {/* Content */}
       <div className="max-w-2xl mx-auto p-4 pb-20">
 
-        {/* Always-mounted hidden elements for camera/upload */}
         <canvas ref={canvasRef} className="hidden" />
         <input
           ref={fileInputRef}
           type="file"
           accept="image/*"
           className="hidden"
-          onChange={(e) => {
-            const type = step === 'photo-before' ? 'before' : 'after'
-            handlePhotoUpload(type, e)
-          }}
+          onChange={(e) => handlePhotoUpload(step === 'photo-before' ? 'before' : 'after', e)}
         />
 
         {/* Intro */}
         {step === 'intro' && (
           <div className="mt-8 space-y-6">
-            <h2 className="text-2xl font-bold">Document Your Job</h2>
-            <p className="text-gray-700">This demo shows how JobProof works offline. Try it out:</p>
-            <div className="space-y-3">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900">Document Your Job</h2>
+              <p className="text-stone-500 text-sm mt-1">Capture tamper-proof evidence in 7 steps. Works offline.</p>
+            </div>
+            <div className="space-y-2">
               {[
-                '📸 Take a before photo',
-                '📸 Take an after photo',
-                '📍 Capture your location',
-                '📝 Add notes about the work',
-                '✍️ Client digitally signs',
-                '🔐 File gets cryptographically sealed',
-                '📤 Export proof when online'
-              ].map((step, i) => (
-                <div key={i} className="flex gap-3 p-3 bg-blue-50 rounded-lg">
-                  <span className="text-lg">{step.split(' ')[0]}</span>
-                  <span className="text-gray-700">{step.slice(2)}</span>
+                { n: '1', label: 'Take a before photo' },
+                { n: '2', label: 'Take an after photo' },
+                { n: '3', label: 'Capture GPS location' },
+                { n: '4', label: 'Add work notes' },
+                { n: '5', label: 'Client signs off' },
+                { n: '6', label: 'Cryptographically sealed' },
+                { n: '7', label: 'Export proof file' },
+              ].map((s) => (
+                <div key={s.n} className="flex items-center gap-3 p-3 bg-white rounded-md shadow-sm border border-stone-100">
+                  <span className="w-7 h-7 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">{s.n}</span>
+                  <span className="text-stone-700 text-sm font-medium">{s.label}</span>
                 </div>
               ))}
             </div>
             <button
               onClick={() => setStep('photo-before')}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700"
+              className="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 py-4 rounded-md font-bold text-lg transition-colors"
             >
-              Start Demo →
+              Start Job Documentation
             </button>
-            <p className="text-xs text-gray-500 text-center">
-              💡 This works completely offline. Try it on your phone with WiFi turned off!
-            </p>
+            <p className="text-xs text-stone-400 text-center">Works 100% offline. No WiFi needed.</p>
           </div>
         )}
 
         {/* Photo Before */}
         {step === 'photo-before' && (
-          <div className="mt-8 space-y-6">
-            <h2 className="text-2xl font-bold">Take Before Photo</h2>
-            
+          <div className="mt-6 space-y-4">
+            <h2 className="text-xl font-bold text-slate-900">Before Photo</h2>
+
             {!stream && (
               <div className="space-y-3">
                 <button
                   onClick={() => startCamera('before')}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 flex items-center justify-center gap-2"
+                  className="w-full bg-slate-900 text-white py-4 rounded-md font-bold text-lg flex items-center justify-center gap-3 hover:bg-slate-800 transition-colors"
                 >
-                  <CameraIcon className="w-5 h-5" />
+                  <CameraIcon className="w-6 h-6" />
                   Open Camera
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full border-2 border-blue-600 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50"
+                  className="w-full border-2 border-stone-300 text-stone-600 py-3 rounded-md font-medium hover:border-stone-400 transition-colors"
                 >
                   Upload Photo Instead
                 </button>
               </div>
             )}
-            
+
             {stream && (
               <div className="space-y-3">
-                <video ref={videoRef} autoPlay playsInline className="w-full bg-black rounded-lg" />
+                <div className="rounded-md overflow-hidden bg-black">
+                  <video ref={videoRef} autoPlay playsInline className="w-full" />
+                </div>
                 <button
                   onClick={() => capturePhoto('before')}
-                  className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700"
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 py-4 rounded-md font-bold text-lg transition-colors"
                 >
                   Capture Photo
                 </button>
@@ -442,40 +487,45 @@ export default function Demo() {
 
         {/* Photo After */}
         {step === 'photo-after' && (
-          <div className="mt-8 space-y-6">
-            <h2 className="text-2xl font-bold">Take After Photo</h2>
-            
+          <div className="mt-6 space-y-4">
+            <h2 className="text-xl font-bold text-slate-900">After Photo</h2>
+
             {jobData.beforePhoto && (
-              <div className="bg-gray-100 rounded-lg p-4 mb-4">
-                <p className="text-sm text-gray-600 mb-2">Before photo captured ✓</p>
-                <img src={jobData.beforePhoto} alt="Before" className="w-full rounded-lg max-h-40 object-cover" />
+              <div className="bg-white rounded-md shadow-sm border border-stone-100 p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <p className="text-xs text-stone-500 font-medium uppercase tracking-wide">Before photo saved</p>
+                </div>
+                <img src={jobData.beforePhoto} alt="Before" className="w-full rounded max-h-36 object-cover" />
               </div>
             )}
-            
+
             {!stream && (
               <div className="space-y-3">
                 <button
                   onClick={() => startCamera('after')}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 flex items-center justify-center gap-2"
+                  className="w-full bg-slate-900 text-white py-4 rounded-md font-bold text-lg flex items-center justify-center gap-3 hover:bg-slate-800 transition-colors"
                 >
-                  <CameraIcon className="w-5 h-5" />
+                  <CameraIcon className="w-6 h-6" />
                   Open Camera
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full border-2 border-blue-600 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50"
+                  className="w-full border-2 border-stone-300 text-stone-600 py-3 rounded-md font-medium hover:border-stone-400 transition-colors"
                 >
                   Upload Photo Instead
                 </button>
               </div>
             )}
-            
+
             {stream && (
               <div className="space-y-3">
-                <video ref={videoRef} autoPlay playsInline className="w-full bg-black rounded-lg" />
+                <div className="rounded-md overflow-hidden bg-black">
+                  <video ref={videoRef} autoPlay playsInline className="w-full" />
+                </div>
                 <button
                   onClick={() => capturePhoto('after')}
-                  className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700"
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 py-4 rounded-md font-bold text-lg transition-colors"
                 >
                   Capture Photo
                 </button>
@@ -486,128 +536,143 @@ export default function Demo() {
 
         {/* Location */}
         {step === 'location' && (
-          <div className="mt-8 space-y-6">
-            <h2 className="text-2xl font-bold">Capture Location</h2>
-            
+          <div className="mt-6 space-y-4">
+            <h2 className="text-xl font-bold text-slate-900">GPS Location</h2>
+
             {jobData.beforePhoto && jobData.afterPhoto && (
-              <div className="grid grid-cols-2 gap-3">
-                <img src={jobData.beforePhoto} alt="Before" className="w-full rounded-lg max-h-32 object-cover" />
-                <img src={jobData.afterPhoto} alt="After" className="w-full rounded-lg max-h-32 object-cover" />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="relative rounded-md overflow-hidden">
+                  <img src={jobData.beforePhoto} alt="Before" className="w-full h-24 object-cover" />
+                  <span className="absolute bottom-1 left-1 bg-slate-900/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded uppercase">Before</span>
+                </div>
+                <div className="relative rounded-md overflow-hidden">
+                  <img src={jobData.afterPhoto} alt="After" className="w-full h-24 object-cover" />
+                  <span className="absolute bottom-1 left-1 bg-slate-900/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded uppercase">After</span>
+                </div>
               </div>
             )}
-            
-            <p className="text-gray-700">This proves your location and time. Works completely offline.</p>
-            
+
+            <p className="text-stone-500 text-sm">Proves your location and time. Works offline.</p>
+
             <button
               onClick={getLocation}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 flex items-center justify-center gap-2"
+              className="w-full bg-slate-900 text-white py-4 rounded-md font-bold flex items-center justify-center gap-3 hover:bg-slate-800 transition-colors"
             >
               <MapPinIcon className="w-5 h-5" />
               Get My GPS Location
             </button>
-            
+
             {jobData.latitude && (
-              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                <p className="text-green-900 text-sm">✓ Location captured</p>
-                <p className="text-green-700 text-xs mt-1">{jobData.latitude.toFixed(6)}, {jobData.longitude?.toFixed(6)}</p>
+              <div className="bg-amber-50 border border-amber-200 p-4 rounded-md">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <p className="text-emerald-700 text-xs font-bold uppercase tracking-wide">Location captured</p>
+                </div>
+                <p className="text-amber-900 font-mono text-sm">{jobData.latitude.toFixed(6)}, {jobData.longitude?.toFixed(6)}</p>
               </div>
             )}
-            
+
             <button
               onClick={() => setStep('notes')}
-              className="w-full border-2 border-gray-300 py-3 rounded-lg font-semibold hover:border-gray-400"
+              className="w-full border-2 border-stone-300 py-3 rounded-md font-medium text-stone-600 hover:border-stone-400 transition-colors"
             >
-              Continue (Location Optional)
+              {jobData.latitude ? 'Continue' : 'Skip Location'}
             </button>
           </div>
         )}
 
         {/* Notes */}
         {step === 'notes' && (
-          <div className="mt-8 space-y-6">
-            <h2 className="text-2xl font-bold">Add Notes</h2>
-            
+          <div className="mt-6 space-y-4">
+            <h2 className="text-xl font-bold text-slate-900">Work Notes</h2>
+
             <textarea
               placeholder="What work was done? Any issues? Anything the client should know?"
               value={jobData.notes}
               onChange={(e) => setJobData(prev => ({ ...prev, notes: e.target.value }))}
-              className="w-full p-4 border-2 border-gray-300 rounded-lg h-32 focus:border-blue-600 outline-none"
+              className="w-full p-4 border-2 border-stone-300 rounded-md h-36 focus:border-amber-500 outline-none text-sm text-stone-800 placeholder:text-stone-400"
             />
-            
+
             <button
               onClick={() => setStep('signature')}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700"
+              className="w-full bg-slate-900 text-white py-4 rounded-md font-bold hover:bg-slate-800 transition-colors"
             >
-              Next: Get Signature →
+              Next: Client Signature
             </button>
           </div>
         )}
 
         {/* Signature */}
         {step === 'signature' && (
-          <div className="mt-8 space-y-6">
-            <h2 className="text-2xl font-bold">Client Signature</h2>
-            <p className="text-gray-700 text-sm">Have the client sign below to confirm the work.</p>
-            
-            <div className="border-2 border-gray-300 rounded-lg bg-white">
+          <div className="mt-6 space-y-4">
+            <h2 className="text-xl font-bold text-slate-900">Client Signature</h2>
+            <p className="text-stone-500 text-sm">Have the client sign below to confirm the work.</p>
+
+            <div className="border-2 border-stone-300 rounded-md bg-white relative">
               <canvas
                 ref={signatureCanvasRef}
                 width={400}
                 height={200}
-                className="w-full bg-white rounded-lg border-2 border-gray-300"
+                className="w-full bg-white rounded-md"
                 style={{ cursor: 'crosshair', touchAction: 'none' }}
                 onMouseDown={(e) => {
                   const rect = signatureCanvasRef.current?.getBoundingClientRect()
                   if (!rect || !signatureCanvasRef.current) return
-                  const context = signatureCanvasRef.current.getContext('2d')
-                  if (!context) return
-                  context.beginPath()
-                  context.moveTo(e.clientX - rect.left, e.clientY - rect.top)
+                  const ctx = signatureCanvasRef.current.getContext('2d')
+                  if (!ctx) return
+                  ctx.strokeStyle = '#18181b'
+                  ctx.beginPath()
+                  ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top)
                 }}
                 onMouseMove={(e) => {
                   if (e.buttons === 1 && signatureCanvasRef.current) {
                     const rect = signatureCanvasRef.current.getBoundingClientRect()
-                    const context = signatureCanvasRef.current.getContext('2d')
-                    if (!context) return
-                    context.lineWidth = 2
-                    context.lineCap = 'round'
-                    context.lineTo(e.clientX - rect.left, e.clientY - rect.top)
-                    context.stroke()
+                    const ctx = signatureCanvasRef.current.getContext('2d')
+                    if (!ctx) return
+                    ctx.lineWidth = 3
+                    ctx.lineCap = 'round'
+                    ctx.lineJoin = 'round'
+                    ctx.strokeStyle = '#18181b'
+                    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top)
+                    ctx.stroke()
                   }
                 }}
                 onTouchStart={(e) => {
                   const touch = e.touches[0]
                   const rect = signatureCanvasRef.current?.getBoundingClientRect()
                   if (!rect || !signatureCanvasRef.current) return
-                  const context = signatureCanvasRef.current.getContext('2d')
-                  if (!context) return
-                  context.beginPath()
-                  context.moveTo(touch.clientX - rect.left, touch.clientY - rect.top)
+                  const ctx = signatureCanvasRef.current.getContext('2d')
+                  if (!ctx) return
+                  ctx.strokeStyle = '#18181b'
+                  ctx.beginPath()
+                  ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top)
                 }}
                 onTouchMove={(e) => {
                   const touch = e.touches[0]
                   if (!signatureCanvasRef.current) return
                   const rect = signatureCanvasRef.current.getBoundingClientRect()
-                  const context = signatureCanvasRef.current.getContext('2d')
-                  if (!context) return
-                  context.lineWidth = 2
-                  context.lineCap = 'round'
-                  context.lineTo(touch.clientX - rect.left, touch.clientY - rect.top)
-                  context.stroke()
+                  const ctx = signatureCanvasRef.current.getContext('2d')
+                  if (!ctx) return
+                  ctx.lineWidth = 3
+                  ctx.lineCap = 'round'
+                  ctx.lineJoin = 'round'
+                  ctx.strokeStyle = '#18181b'
+                  ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top)
+                  ctx.stroke()
                 }}
               />
             </div>
-            
+
             <div className="flex gap-3">
               <button
                 onClick={clearSignature}
-                className="flex-1 border-2 border-gray-300 py-2 rounded-lg font-semibold hover:border-gray-400"
+                className="flex-1 border-2 border-stone-300 py-3 rounded-md font-medium text-stone-600 hover:border-stone-400 transition-colors"
               >
                 Clear
               </button>
               <button
                 onClick={handleSignature}
-                className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700"
+                className="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-900 py-3 rounded-md font-bold transition-colors"
               >
                 Confirm Signature
               </button>
@@ -617,134 +682,132 @@ export default function Demo() {
 
         {/* Review */}
         {step === 'review' && (
-          <div className="mt-8 space-y-6">
-            <h2 className="text-2xl font-bold">Review & Sign Off</h2>
-            
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs text-gray-500 mb-2">Before Photo</p>
-                {jobData.beforePhoto && <img src={jobData.beforePhoto} alt="Before" className="w-full rounded-lg" />}
+          <div className="mt-6 space-y-4">
+            <h2 className="text-xl font-bold text-slate-900">Review &amp; Export</h2>
+
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="relative rounded-md overflow-hidden shadow-sm">
+                  {jobData.beforePhoto && <img src={jobData.beforePhoto} alt="Before" className="w-full h-40 object-cover" />}
+                  <span className="absolute top-2 left-2 bg-slate-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">Before</span>
+                </div>
+                <div className="relative rounded-md overflow-hidden shadow-sm">
+                  {jobData.afterPhoto && <img src={jobData.afterPhoto} alt="After" className="w-full h-40 object-cover" />}
+                  <span className="absolute top-2 left-2 bg-slate-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">After</span>
+                </div>
               </div>
-              
-              <div>
-                <p className="text-xs text-gray-500 mb-2">After Photo</p>
-                {jobData.afterPhoto && <img src={jobData.afterPhoto} alt="After" className="w-full rounded-lg" />}
-              </div>
-              
+
               {jobData.latitude && (
-                <div className="bg-blue-50 p-3 rounded-lg text-sm">
-                  <p className="font-semibold text-blue-900">📍 Location</p>
-                  <p className="text-blue-700">{jobData.latitude.toFixed(6)}, {jobData.longitude?.toFixed(6)}</p>
+                <div className="bg-amber-50 border border-amber-200 p-3 rounded-md flex items-center gap-2">
+                  <MapPinIcon className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                  <p className="text-amber-900 font-mono text-xs">{jobData.latitude.toFixed(6)}, {jobData.longitude?.toFixed(6)}</p>
                 </div>
               )}
-              
+
               {jobData.notes && (
-                <div className="bg-gray-50 p-3 rounded-lg text-sm">
-                  <p className="font-semibold text-gray-900">📝 Notes</p>
-                  <p className="text-gray-700">{jobData.notes}</p>
+                <div className="bg-white border border-stone-200 p-3 rounded-md shadow-sm">
+                  <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wide mb-1">Notes</p>
+                  <p className="text-stone-700 text-sm">{jobData.notes}</p>
                 </div>
               )}
-              
+
               {jobData.signature && (
-                <div className="bg-green-50 p-3 rounded-lg text-sm">
-                  <p className="font-semibold text-green-900">✍️ Signed</p>
-                  <p className="text-green-700">Client signature captured</p>
+                <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-md flex items-center gap-2">
+                  <CheckIcon className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <p className="text-emerald-800 text-xs font-medium">Client signature captured</p>
                 </div>
               )}
-              
-              <div className="bg-purple-50 p-3 rounded-lg text-sm">
-                <p className="font-semibold text-purple-900">🔐 Cryptographic Seal</p>
-                <p className="text-purple-700 font-mono text-xs break-all">{generateSeal()}</p>
-                <p className="text-purple-600 text-xs mt-1">This seal proves the data hasn't been tampered with.</p>
+
+              <div className="bg-slate-900 p-3 rounded-md">
+                <p className="text-[10px] text-amber-400 font-bold uppercase tracking-wide mb-1">Cryptographic Seal</p>
+                <p className="text-indigo-300 font-mono text-xs break-all">{generateSeal()}</p>
+                <p className="text-stone-500 text-[10px] mt-1">Tamper-proof integrity verification</p>
               </div>
             </div>
-            
+
             <button
               onClick={exportProof}
-              className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 flex items-center justify-center gap-2"
+              className="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 py-4 rounded-md font-bold text-lg flex items-center justify-center gap-2 transition-colors"
             >
               <CheckIcon className="w-5 h-5" />
-              Export Proof File
+              Download Report
             </button>
           </div>
         )}
 
         {/* Export */}
         {step === 'export' && (
-          <div className="mt-8 space-y-6">
-            <h2 className="text-2xl font-bold">Report Downloaded</h2>
+          <div className="mt-6 space-y-5">
+            <h2 className="text-xl font-bold text-slate-900">Report Ready</h2>
 
-            <div className="bg-green-50 p-6 rounded-lg border border-green-200 text-center">
-              <p className="text-green-900 font-semibold text-lg mb-2">Your proof report has been saved</p>
-              <p className="text-green-700 text-sm">Open the HTML file in any browser to view or print your beautifully formatted report.</p>
+            <div className="bg-emerald-50 border border-emerald-200 p-5 rounded-md text-center">
+              <p className="text-emerald-900 font-bold text-lg">Report saved to your device</p>
+              <p className="text-emerald-700 text-sm mt-1">Open the HTML file in any browser to view or print.</p>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-              <h3 className="font-bold text-gray-900">Email Report</h3>
-              <p className="text-sm text-gray-600">Send a copy to your email, your client, or your attorney.</p>
+            {/* Email section */}
+            <div className="bg-white border border-stone-200 rounded-md p-5 shadow-sm space-y-3">
+              <h3 className="font-bold text-slate-900 text-sm">Email Report</h3>
+              <p className="text-xs text-stone-500">Send to your client, attorney, or insurer.</p>
 
               {emailSent ? (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                  <p className="text-green-800 font-semibold">Report sent to {emailAddress}</p>
+                <div className="bg-emerald-50 border border-emerald-200 rounded-md p-3 text-center">
+                  <p className="text-emerald-800 font-medium text-sm">
+                    {isOnline ? `Report sent to ${emailAddress}` : `Queued for ${emailAddress} — will send when online`}
+                  </p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <input
                     type="email"
                     placeholder="email@example.com"
                     value={emailAddress}
                     onChange={(e) => { setEmailAddress(e.target.value); setEmailError('') }}
-                    className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-600 outline-none text-sm"
+                    className="w-full p-3 border-2 border-stone-300 rounded-md focus:border-amber-500 outline-none text-sm"
                   />
-                  {emailError && (
-                    <p className="text-red-600 text-sm">{emailError}</p>
-                  )}
+                  {emailError && <p className="text-red-600 text-xs">{emailError}</p>}
                   <button
                     onClick={sendReport}
                     disabled={sendingEmail}
-                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-slate-900 text-white py-3 rounded-md font-bold hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
                   >
-                    {sendingEmail ? 'Sending...' : 'Send Report via Email'}
+                    {sendingEmail ? 'Sending...' : isOnline ? 'Send Report' : 'Queue for Sending'}
                   </button>
                 </div>
+              )}
+
+              {pendingEmails > 0 && (
+                <p className="text-amber-700 text-xs font-medium">{pendingEmails} report{pendingEmails > 1 ? 's' : ''} queued — will send when online</p>
               )}
             </div>
 
             <button
               onClick={exportProof}
-              className="w-full border-2 border-gray-300 py-3 rounded-lg font-semibold hover:border-gray-400 text-sm"
+              className="w-full border-2 border-stone-300 py-3 rounded-md font-medium text-stone-600 hover:border-stone-400 transition-colors text-sm"
             >
-              Download Report Again
+              Download Again
             </button>
 
-            <div className="bg-blue-50 p-6 rounded-lg space-y-3">
-              <h3 className="font-bold text-blue-900">What&apos;s in your report:</h3>
-              <ul className="text-sm text-blue-700 space-y-2">
-                <li>Before & after photo evidence</li>
-                <li>GPS location & timestamp</li>
-                <li>Client digital signature</li>
-                <li>Cryptographic tamper-proof seal</li>
-                <li>Court-ready formatted document</li>
+            <div className="bg-stone-100 p-5 rounded-md space-y-2">
+              <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wide">Your report includes</h3>
+              <ul className="text-xs text-stone-600 space-y-1">
+                <li className="flex items-center gap-2"><CheckIcon className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> Before &amp; after photo evidence</li>
+                <li className="flex items-center gap-2"><CheckIcon className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> GPS location &amp; timestamp</li>
+                <li className="flex items-center gap-2"><CheckIcon className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> Client digital signature</li>
+                <li className="flex items-center gap-2"><CheckIcon className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> Cryptographic tamper-proof seal</li>
               </ul>
             </div>
 
             <div className="space-y-3">
               <button
-                onClick={() => {
-                  setStep('intro')
-                  setJobData({ notes: '', timestamp: Date.now() })
-                  setEmailSent(false)
-                  setEmailAddress('')
-                  setEmailError('')
-                }}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700"
+                onClick={startNewJob}
+                className="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 py-4 rounded-md font-bold transition-colors"
               >
                 Start New Job
               </button>
-
               <Link
                 href="/#email-form"
-                className="w-full border-2 border-blue-600 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50 text-center block"
+                className="w-full border-2 border-slate-900 text-slate-900 py-3 rounded-md font-medium hover:bg-slate-50 text-center block transition-colors text-sm"
               >
                 Get Full Version ($29/month)
               </Link>
