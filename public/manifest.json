@@ -4,8 +4,8 @@
   "description": "Never lose a lien claim again. Offline-first field evidence for construction.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2563eb",
+  "background_color": "#fafaf9",
+  "theme_color": "#141422",
   "orientation": "portrait-primary",
   "scope": "/",
   "icons": [
