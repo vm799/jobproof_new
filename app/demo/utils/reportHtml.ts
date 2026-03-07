@@ -1,18 +1,28 @@
 import type { JobData } from '../types'
 import { generateSeal } from './sealGeneration'
 
+function esc(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+function safeImgSrc(src: string): string {
+  // Only allow data: URIs (base64 images from canvas/camera)
+  if (src.startsWith('data:image/')) return src
+  return ''
+}
+
 export function buildReportHtml(jobData: JobData, jobId: string): string {
   const seal = generateSeal(jobData)
   const ts = new Date(jobData.timestamp)
   const location = jobData.latitude ? `${jobData.latitude.toFixed(6)}, ${jobData.longitude?.toFixed(6)}` : 'Not captured'
-  const w3wDisplay = jobData.w3w ? `/// ${jobData.w3w}` : ''
+  const w3wDisplay = jobData.w3w ? `/// ${esc(jobData.w3w)}` : ''
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JobProof Report - ${jobId}</title>
+<title>JobProof Report - ${esc(jobId)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -77,7 +87,7 @@ export function buildReportHtml(jobData: JobData, jobId: string): string {
     </div>
   </div>
   <div class="meta-bar">
-    <div class="meta-item"><span class="meta-label">Job ID</span><span class="meta-value">${jobId}</span></div>
+    <div class="meta-item"><span class="meta-label">Job ID</span><span class="meta-value">${esc(jobId)}</span></div>
     <div class="meta-item"><span class="meta-label">Date</span><span class="meta-value">${ts.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
     <div class="meta-item"><span class="meta-label">Time</span><span class="meta-value">${ts.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span></div>
     <div class="meta-item"><span class="meta-label">Exported</span><span class="meta-value">${new Date().toLocaleString()}</span></div>
@@ -86,11 +96,11 @@ export function buildReportHtml(jobData: JobData, jobId: string): string {
     <div class="section-title">Photo Evidence</div>
     <div class="photos">
       <div class="photo-card">
-        ${jobData.beforePhoto ? `<img src="${jobData.beforePhoto}" alt="Before" />` : '<div style="height:280px;background:#f5f5f4;display:flex;align-items:center;justify-content:center;color:#a8a29e;">No photo</div>'}
+        ${jobData.beforePhoto ? `<img src="${safeImgSrc(jobData.beforePhoto)}" alt="Before" />` : '<div style="height:280px;background:#f5f5f4;display:flex;align-items:center;justify-content:center;color:#a8a29e;">No photo</div>'}
         <div class="photo-label">Before</div>
       </div>
       <div class="photo-card">
-        ${jobData.afterPhoto ? `<img src="${jobData.afterPhoto}" alt="After" />` : '<div style="height:280px;background:#f5f5f4;display:flex;align-items:center;justify-content:center;color:#a8a29e;">No photo</div>'}
+        ${jobData.afterPhoto ? `<img src="${safeImgSrc(jobData.afterPhoto)}" alt="After" />` : '<div style="height:280px;background:#f5f5f4;display:flex;align-items:center;justify-content:center;color:#a8a29e;">No photo</div>'}
         <div class="photo-label">After</div>
       </div>
     </div>
@@ -106,11 +116,11 @@ export function buildReportHtml(jobData: JobData, jobId: string): string {
       </div>
     </div>
   </div>
-  ${jobData.notes ? `<div class="section"><div class="section-title">Work Notes</div><div class="notes-text">${jobData.notes.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div></div>` : ''}
+  ${jobData.notes ? `<div class="section"><div class="section-title">Work Notes</div><div class="notes-text">${esc(jobData.notes)}</div></div>` : ''}
   <div class="section">
     <div class="section-title">Client Signature</div>
     <div class="signature-box">
-      ${jobData.signature ? `<img src="${jobData.signature}" alt="Client Signature" /><div class="signature-label">Digitally signed by client</div>` : '<div style="color:#a8a29e;padding:20px;">No signature captured</div>'}
+      ${jobData.signature ? `<img src="${safeImgSrc(jobData.signature)}" alt="Client Signature" /><div class="signature-label">Digitally signed by client</div>` : '<div style="color:#a8a29e;padding:20px;">No signature captured</div>'}
     </div>
   </div>
   ${jobData.clientSatisfied ? `<div class="section">
@@ -120,14 +130,14 @@ export function buildReportHtml(jobData: JobData, jobId: string): string {
         <span class="tick">&#x2713;</span>
         Client confirms work completed to their satisfaction
       </div>
-      ${jobData.clientFeedback ? `<div><div class="satisfaction-feedback-label">Client Notes</div><div class="satisfaction-feedback">${jobData.clientFeedback.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div></div>` : ''}
+      ${jobData.clientFeedback ? `<div><div class="satisfaction-feedback-label">Client Notes</div><div class="satisfaction-feedback">${esc(jobData.clientFeedback)}</div></div>` : ''}
     </div>
   </div>` : ''}
   <div class="section">
     <div class="section-title">Cryptographic Seal</div>
     <div class="seal-section">
       <div class="seal-title">Integrity Verification</div>
-      <div class="seal-hash">${seal}</div>
+      <div class="seal-hash">${esc(seal)}</div>
       <div class="seal-note">This cryptographic seal verifies that the contents of this report have not been tampered with since creation.</div>
     </div>
   </div>
@@ -136,7 +146,7 @@ export function buildReportHtml(jobData: JobData, jobId: string): string {
       <strong style="text-transform:uppercase;letter-spacing:0.5px;font-size:8px;color:#71717a;">Disclaimer:</strong>
       JobProof is a documentation tool. It does not provide legal advice and makes no guarantees regarding admissibility of documentation in legal proceedings. Cryptographic seals verify data integrity but are not a substitute for qualified legal counsel. Always consult a licensed attorney before relying on evidence in court proceedings, lien claims, or insurance disputes.
     </div>
-    Generated by JobProof &mdash; Tamper-proof work documentation for construction professionals<br>Report ID: ${jobId} &bull; ${new Date().toISOString()}
+    Generated by JobProof &mdash; Tamper-proof work documentation for construction professionals<br>Report ID: ${esc(jobId)} &bull; ${new Date().toISOString()}
   </div>
 </div>
 </body>
