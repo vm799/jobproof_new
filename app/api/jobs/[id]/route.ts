@@ -3,6 +3,7 @@ import { getServiceClient } from '@/lib/supabase'
 import { getAuthCookie } from '@/lib/auth'
 import { updateJobSchema } from '@/lib/validation'
 import { rateLimit } from '@/lib/rate-limit'
+import { validateCsrf } from '@/lib/csrf'
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const ip = request.headers.get('x-forwarded-for') || 'unknown'
@@ -36,6 +37,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   const { success } = rateLimit(`job-patch:${ip}`, { maxRequests: 10, windowMs: 60_000 })
   if (!success) {
     return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+  }
+
+  if (!validateCsrf(request)) {
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
   }
 
   const managerId = getAuthCookie()
@@ -88,6 +93,10 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   const { success } = rateLimit(`job-delete:${ip}`, { maxRequests: 5, windowMs: 60_000 })
   if (!success) {
     return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+  }
+
+  if (!validateCsrf(request)) {
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
   }
 
   const managerId = getAuthCookie()

@@ -3,6 +3,7 @@ import { Resend } from 'resend'
 import { getServiceClient } from '@/lib/supabase'
 import { getAuthCookie } from '@/lib/auth'
 import { rateLimit } from '@/lib/rate-limit'
+import { validateCsrf } from '@/lib/csrf'
 import { escapeHtml } from '@/lib/sanitize'
 import { newJobEmail } from '@/lib/email'
 
@@ -11,6 +12,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   const { success } = rateLimit(`send-job:${ip}`, { maxRequests: 10, windowMs: 60_000 })
   if (!success) {
     return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+  }
+
+  if (!validateCsrf(request)) {
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
   }
 
   const managerId = getAuthCookie()

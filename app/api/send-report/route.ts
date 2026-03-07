@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { sendReportSchema } from '@/lib/validation'
 import { rateLimit } from '@/lib/rate-limit'
+import { validateCsrf } from '@/lib/csrf'
 import { getAuthCookie } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
@@ -10,6 +11,10 @@ export async function POST(request: NextRequest) {
     const { success } = rateLimit(`report:${ip}`, { maxRequests: 5, windowMs: 60_000 })
     if (!success) {
       return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+    }
+
+    if (!validateCsrf(request)) {
+      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
     }
 
     const managerId = await getAuthCookie()
