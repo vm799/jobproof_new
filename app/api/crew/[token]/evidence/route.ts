@@ -3,6 +3,41 @@ import { getServiceClient } from '@/lib/supabase'
 import { evidenceSchema } from '@/lib/validation'
 import { rateLimit } from '@/lib/rate-limit'
 
+const STORAGE_BUCKET = 'job-photos'
+
+async function uploadBase64ToStorage(
+  supabase: ReturnType<typeof getServiceClient>,
+  base64Data: string,
+  filePath: string
+): Promise<string | null> {
+  // Extract the actual base64 content from data URL
+  const match = base64Data.match(/^data:([^;]+);base64,(.+)$/)
+  if (!match) return null
+
+  const contentType = match[1]
+  const base64Content = match[2]
+  const buffer = Buffer.from(base64Content, 'base64')
+
+  const { error } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .upload(filePath, buffer, {
+      contentType,
+      upsert: true,
+    })
+
+  if (error) {
+    console.error('Storage upload error:', error)
+    // Fallback: store base64 directly if storage not configured
+    return base64Data
+  }
+
+  const { data: urlData } = supabase.storage
+    .from(STORAGE_BUCKET)
+    .getPublicUrl(filePath)
+
+  return urlData.publicUrl
+}
+
 export async function POST(request: NextRequest, { params }: { params: { token: string } }) {
   const ip = request.headers.get('x-forwarded-for') || 'unknown'
   const { success } = rateLimit(`crew-evidence:${ip}`, { maxRequests: 10, windowMs: 60_000 })
@@ -40,15 +75,24 @@ export async function POST(request: NextRequest, { params }: { params: { token: 
     const evidence = parsed.data
     const updates: Record<string, unknown> = {}
 
-    // Accept base64 photos directly (store as data URLs for now)
-    // In production, these would upload to Supabase Storage
-    if (evidence.beforePhoto) updates.before_photo_url = evidence.beforePhoto
-    if (evidence.afterPhoto) updates.after_photo_url = evidence.afterPhoto
+    // Upload photos to Supabase Storage (falls back to base64 if storage not configured)
+    if (evidence.beforePhoto) {
+      const url = await uploadBase64ToStorage(supabase, evidence.beforePhoto, `${job.id}/before.jpg`)
+      if (url) updates.before_photo_url = url
+    }
+    if (evidence.afterPhoto) {
+      const url = await uploadBase64ToStorage(supabase, evidence.afterPhoto, `${job.id}/after.jpg`)
+      if (url) updates.after_photo_url = url
+    }
+    if (evidence.signature) {
+      const url = await uploadBase64ToStorage(supabase, evidence.signature, `${job.id}/signature.png`)
+      if (url) updates.signature_url = url
+    }
+
     if (evidence.latitude !== undefined) updates.latitude = evidence.latitude
     if (evidence.longitude !== undefined) updates.longitude = evidence.longitude
     if (evidence.w3w) updates.w3w = evidence.w3w
     if (evidence.notes !== undefined) updates.notes = evidence.notes
-    if (evidence.signature) updates.signature_url = evidence.signature
     if (evidence.seal) updates.seal = evidence.seal
 
     // Update status to in_progress if currently accepted
