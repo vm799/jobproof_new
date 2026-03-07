@@ -27,6 +27,11 @@ export default function LoginPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to send')
+      // In demo mode (no RESEND_API_KEY), auto-redirect to the magic link
+      if (data.demoUrl) {
+        window.location.href = data.demoUrl
+        return
+      }
       setSent(true)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Try again.')
