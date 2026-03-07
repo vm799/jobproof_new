@@ -11,7 +11,8 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
           regs.forEach((r) => r.unregister())
         })
       }
-      if ('caches' in window) {
+      const hasCaches = typeof window.caches !== 'undefined'
+      if (hasCaches) {
         caches.keys().then((names) => {
           Promise.all(names.map((n) => caches.delete(n))).then(() => {
             window.location.reload()

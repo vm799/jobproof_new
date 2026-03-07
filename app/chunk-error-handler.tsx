@@ -9,16 +9,16 @@ export default function ChunkErrorHandler() {
         event.reason?.name === 'ChunkLoadError' ||
         event.reason?.message?.includes('Loading chunk')
       ) {
-        // Prevent default error logging
         event.preventDefault()
-        // Unregister stale service workers and reload
+        // Unregister stale service workers
         if ('serviceWorker' in navigator) {
           navigator.serviceWorker.getRegistrations().then((registrations) => {
             registrations.forEach((r) => r.unregister())
           })
         }
         // Clear caches then reload
-        if ('caches' in window) {
+        const hasCaches = typeof window.caches !== 'undefined'
+        if (hasCaches) {
           caches.keys().then((names) => {
             Promise.all(names.map((n) => caches.delete(n))).then(() => {
               window.location.reload()
