@@ -101,7 +101,7 @@ export default function Demo() {
           if (res.ok && entry.id != null) {
             await removeFromOutbox(entry.id)
           }
-        } catch { /* will retry next time */ }
+        } catch (err) { console.warn('Outbox flush failed, will retry:', err) }
       }
       const remaining = await getOutboxPending()
       setPendingEmails(remaining.length)

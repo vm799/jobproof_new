@@ -3,6 +3,7 @@ import { Resend } from 'resend'
 import { getServiceClient } from '@/lib/supabase'
 import { getAuthCookie } from '@/lib/auth'
 import { rateLimit } from '@/lib/rate-limit'
+import { escapeHtml } from '@/lib/sanitize'
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const ip = request.headers.get('x-forwarded-for') || 'unknown'
@@ -73,15 +74,15 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 <div class="wrap"><div class="card">
   <div class="header">
     <h1>New Job Assigned</h1>
-    <p>From ${managerName}</p>
+    <p>From ${escapeHtml(managerName)}</p>
   </div>
   <div class="body">
     <div class="detail">
       <div class="detail-label">Job</div>
-      <div class="detail-value">${job.title}</div>
+      <div class="detail-value">${escapeHtml(job.title || '')}</div>
     </div>
-    ${job.address ? `<div class="detail"><div class="detail-label">Address</div><div class="detail-value">${job.address}</div></div>` : ''}
-    ${job.instructions ? `<div class="detail"><div class="detail-label">Instructions</div><div class="detail-value">${job.instructions}</div></div>` : ''}
+    ${job.address ? `<div class="detail"><div class="detail-label">Address</div><div class="detail-value">${escapeHtml(job.address || '')}</div></div>` : ''}
+    ${job.instructions ? `<div class="detail"><div class="detail-label">Instructions</div><div class="detail-value">${escapeHtml(job.instructions || '')}</div></div>` : ''}
     <p style="text-align:center;margin-top:24px;">
       <a href="${jobUrl}" class="cta">Open Job</a>
     </p>

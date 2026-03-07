@@ -10,6 +10,8 @@ export const createJobSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
   address: z.string().max(500).optional().default(''),
   instructions: z.string().max(2000).optional().default(''),
+  crewName: z.string().max(100).optional().default(''),
+  crewEmail: z.string().email().max(255).optional().or(z.literal('')).default(''),
 })
 
 export const sendJobSchema = z.object({
@@ -22,6 +24,8 @@ export const updateJobSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   address: z.string().max(500).optional(),
   instructions: z.string().max(2000).optional(),
+  crewName: z.string().max(100).optional(),
+  crewEmail: z.string().email().max(255).optional(),
 })
 
 export const evidenceSchema = z.object({

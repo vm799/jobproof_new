@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { getAuthCookie } from '@/lib/auth'
 import { createJobSchema } from '@/lib/validation'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function GET(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for') || 'unknown'
+  const { success } = rateLimit(`jobs-list:${ip}`, { maxRequests: 30, windowMs: 60_000 })
+  if (!success) {
+    return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+  }
+
   const managerId = getAuthCookie()
   if (!managerId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -30,6 +37,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for') || 'unknown'
+  const { success } = rateLimit(`jobs-create:${ip}`, { maxRequests: 10, windowMs: 60_000 })
+  if (!success) {
+    return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+  }
+
   const managerId = getAuthCookie()
   if (!managerId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -41,7 +54,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
     }
-    const { title, address, instructions } = parsed.data
+    const { title, address, instructions, crewName, crewEmail } = parsed.data
 
     const supabase = getServiceClient()
     const { data: job, error } = await supabase
@@ -51,8 +64,8 @@ export async function POST(request: NextRequest) {
         title: title.trim(),
         address: address?.trim() || null,
         instructions: instructions?.trim() || null,
-        crew_name: body.crew_name?.trim() || null,
-        crew_email: body.crew_email?.trim()?.toLowerCase() || null,
+        crew_name: crewName?.trim() || null,
+        crew_email: crewEmail?.trim()?.toLowerCase() || null,
       })
       .select()
       .single()

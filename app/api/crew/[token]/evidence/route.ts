@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { evidenceSchema } from '@/lib/validation'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest, { params }: { params: { token: string } }) {
+  const ip = request.headers.get('x-forwarded-for') || 'unknown'
+  const { success } = rateLimit(`crew-evidence:${ip}`, { maxRequests: 10, windowMs: 60_000 })
+  if (!success) {
+    return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+  }
+
   const supabase = getServiceClient()
 
   const { data: job, error: fetchError } = await supabase

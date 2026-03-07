@@ -10,7 +10,9 @@ export default function NotesStep({ notes, onNotesChange, onNext }: NotesStepPro
   return (
     <div className="mt-6 space-y-4">
       <h2 className="text-xl font-bold text-slate-900">Work Notes</h2>
+      <label htmlFor="work-notes" className="sr-only">Work notes</label>
       <textarea
+        id="work-notes"
         placeholder="What work was done? Any issues?"
         value={notes}
         onChange={(e) => onNotesChange(e.target.value)}

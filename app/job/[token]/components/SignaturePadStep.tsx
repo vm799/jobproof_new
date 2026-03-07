@@ -13,8 +13,12 @@ export default function SignaturePadStep({ signatureCanvasRef, onConfirm, onClea
     <div className="mt-6 space-y-4">
       <h2 className="text-xl font-bold text-slate-900">Client Signature</h2>
       <p className="text-stone-500 text-sm">Have the client sign below to confirm the work.</p>
+      <p className="sr-only">Use mouse or touch to draw your signature on the canvas below</p>
       <div className="border-2 border-stone-300 rounded-md bg-white relative">
         <canvas
+          role="img"
+          aria-label="Signature pad - draw your signature here"
+          tabIndex={0}
           ref={signatureCanvasRef}
           width={400}
           height={200}
