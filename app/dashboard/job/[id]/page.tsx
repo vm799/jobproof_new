@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeftIcon, CheckIcon, MapPinIcon } from '@heroicons/react/20/solid'
+import { ensureCsrfToken, csrfHeaders } from '@/lib/csrf-client'
 
 interface Job {
   id: string
@@ -51,6 +52,7 @@ export default function JobDetailPage() {
   const [message, setMessage] = useState('')
 
   useEffect(() => {
+    ensureCsrfToken()
     fetch(`/api/jobs/${jobId}`)
       .then(res => {
         if (res.status === 401) { router.push('/login'); return null }
@@ -65,7 +67,7 @@ export default function JobDetailPage() {
     setSending(true)
     setMessage('')
     try {
-      const res = await fetch(`/api/jobs/${jobId}/send`, { method: 'POST' })
+      const res = await fetch(`/api/jobs/${jobId}/send`, { method: 'POST', headers: csrfHeaders() })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to send')
       setMessage(data.jobUrl ? `Sent! Crew link: ${data.jobUrl}` : 'Job sent to crew!')
@@ -85,7 +87,7 @@ export default function JobDetailPage() {
     try {
       const res = await fetch(`/api/jobs/${jobId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: csrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ status: 'completed' })
       })
       const data = await res.json()

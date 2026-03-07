@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { PlusIcon } from '@heroicons/react/20/solid'
+import { ensureCsrfToken, csrfHeaders } from '@/lib/csrf-client'
 
 interface Job {
   id: string
@@ -54,7 +55,10 @@ export default function DashboardPage() {
     }
   }, [router])
 
-  useEffect(() => { loadJobs() }, [loadJobs])
+  useEffect(() => {
+    ensureCsrfToken()
+    loadJobs()
+  }, [loadJobs])
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -65,7 +69,7 @@ export default function DashboardPage() {
     try {
       const res = await fetch('/api/jobs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: csrfHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(form)
       })
       if (!res.ok) {
@@ -83,7 +87,7 @@ export default function DashboardPage() {
   }
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' })
+    await fetch('/api/auth/logout', { method: 'POST', headers: csrfHeaders() })
     router.push('/login')
   }
 
