@@ -49,6 +49,7 @@ export default function CrewJobPage() {
   const [error, setError] = useState('')
   const [accepting, setAccepting] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [submittedOnline, setSubmittedOnline] = useState(false)
   const [stream, setStream] = useState<MediaStream | null>(null)
 
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -182,9 +183,9 @@ export default function CrewJobPage() {
   const submitEvidence = async () => {
     setSubmitting(true)
     const seal = generateSeal()
+    let didSubmitOnline = false
 
     try {
-      // Upload evidence
       if (isOnline) {
         await fetch(`/api/crew/${token}/evidence`, {
           method: 'POST',
@@ -200,17 +201,15 @@ export default function CrewJobPage() {
             seal,
           })
         })
-
-        // Submit
         await fetch(`/api/crew/${token}/submit`, { method: 'POST' })
+        didSubmitOnline = true
       }
-      setStep('submitted')
     } catch {
-      // If offline, still show success - will sync later
-      setStep('submitted')
-    } finally {
-      setSubmitting(false)
+      // Offline or network error — SubmittedStep will handle retry
     }
+    setSubmittedOnline(didSubmitOnline)
+    setStep('submitted')
+    setSubmitting(false)
   }
 
   const stepIndex = STEPS.indexOf(step)
@@ -345,7 +344,12 @@ export default function CrewJobPage() {
         )}
 
         {step === 'submitted' && (
-          <SubmittedStep />
+          <SubmittedStep
+            evidence={evidence}
+            token={token}
+            jobTitle={jobInfo.title}
+            submittedOnline={submittedOnline}
+          />
         )}
       </div>
     </div>

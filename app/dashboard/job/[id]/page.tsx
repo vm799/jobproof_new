@@ -172,38 +172,127 @@ export default function JobDetailPage() {
           </div>
         </div>
 
-        {/* Actions */}
+        {/* Next Step Guide */}
         {message && (
           <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-md text-sm">{message}</div>
         )}
 
-        <div className="flex gap-3">
-          {(job.status === 'created' || job.status === 'sent') && job.crew_email && (
-            <button
-              onClick={sendToCrewHandler}
-              disabled={sending}
-              className="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-900 py-3 rounded-md font-bold text-sm disabled:opacity-50 transition-colors"
-            >
-              {sending ? 'Sending...' : job.status === 'sent' ? 'Resend to Crew' : 'Send to Crew'}
-            </button>
-          )}
-          {job.status === 'submitted' && (
+        {job.status === 'created' && (
+          <div className="bg-amber-50 border-2 border-amber-300 rounded-md p-5 space-y-3">
+            <div className="flex items-start gap-3">
+              <span className="bg-amber-500 text-slate-900 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">Send this job to your crew</h3>
+                <p className="text-stone-600 text-xs mt-0.5">
+                  {job.crew_email
+                    ? `Email the job link to ${job.crew_email}, or copy the link to share manually.`
+                    : 'Copy the crew link below and share it via text or email.'}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              {job.crew_email && (
+                <button
+                  onClick={sendToCrewHandler}
+                  disabled={sending}
+                  className="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-900 py-3 rounded-md font-bold text-sm disabled:opacity-50 transition-colors"
+                >
+                  {sending ? 'Sending...' : 'Send to Crew'}
+                </button>
+              )}
+              <button
+                onClick={() => { navigator.clipboard.writeText(crewLink); setMessage('Link copied!') }}
+                className="flex-1 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-md font-bold text-sm transition-colors"
+              >
+                Copy Link
+              </button>
+            </div>
+          </div>
+        )}
+
+        {job.status === 'sent' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-5 space-y-3">
+            <div className="flex items-start gap-3">
+              <span className="bg-blue-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">Waiting for crew to accept</h3>
+                <p className="text-stone-600 text-xs mt-0.5">
+                  Job was sent to {job.crew_email || 'your crew'}. They&apos;ll open the link and start documenting.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={sendToCrewHandler}
+                disabled={sending}
+                className="flex-1 border-2 border-blue-300 text-blue-700 py-2.5 rounded-md font-bold text-sm disabled:opacity-50 transition-colors hover:bg-blue-100"
+              >
+                {sending ? 'Sending...' : 'Resend Email'}
+              </button>
+              <button
+                onClick={() => { navigator.clipboard.writeText(crewLink); setMessage('Link copied!') }}
+                className="flex-1 bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-md font-bold text-sm transition-colors"
+              >
+                Copy Link
+              </button>
+            </div>
+          </div>
+        )}
+
+        {(job.status === 'accepted' || job.status === 'in_progress') && (
+          <div className="bg-amber-50 border border-amber-200 rounded-md p-4 flex items-start gap-3">
+            <div className="animate-spin w-5 h-5 border-2 border-amber-300 border-t-amber-600 rounded-full flex-shrink-0 mt-0.5"></div>
+            <div>
+              <h3 className="font-bold text-slate-900 text-sm">Crew is working</h3>
+              <p className="text-stone-600 text-xs mt-0.5">
+                {job.crew_name || 'Your crew'} is documenting the job. You&apos;ll get an email when evidence is submitted.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {job.status === 'submitted' && (
+          <div className="bg-emerald-50 border-2 border-emerald-300 rounded-md p-5 space-y-3">
+            <div className="flex items-start gap-3">
+              <CheckIcon className="w-6 h-6 text-emerald-600 flex-shrink-0" />
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">Evidence submitted — review and close</h3>
+                <p className="text-stone-600 text-xs mt-0.5">Review the photos, GPS, signature, and seal below, then mark complete.</p>
+              </div>
+            </div>
             <button
               onClick={markComplete}
               disabled={completing}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-md font-bold text-sm disabled:opacity-50 transition-colors"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-md font-bold text-sm disabled:opacity-50 transition-colors"
             >
               {completing ? 'Completing...' : 'Mark Complete'}
             </button>
-          )}
-        </div>
+          </div>
+        )}
+
+        {job.status === 'completed' && (
+          <div className="bg-slate-100 border border-slate-200 rounded-md p-4 flex items-start gap-3">
+            <CheckIcon className="w-5 h-5 text-slate-500 flex-shrink-0" />
+            <div>
+              <h3 className="font-bold text-slate-900 text-sm">Job completed</h3>
+              <p className="text-stone-500 text-xs mt-0.5">This job is closed. Evidence is sealed and preserved below.</p>
+            </div>
+          </div>
+        )}
 
         {/* Crew Link */}
-        {job.crew_token && (
+        {job.crew_token && job.status !== 'created' && (
           <div className="bg-slate-900 rounded-md p-4">
-            <p className="text-xs text-amber-400 font-bold uppercase tracking-wide mb-2">Crew Link</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-amber-400 font-bold uppercase tracking-wide">Crew Link</p>
+              <button
+                onClick={() => { navigator.clipboard.writeText(crewLink); setMessage('Link copied!') }}
+                className="text-xs text-stone-400 hover:text-white transition-colors"
+              >
+                Copy
+              </button>
+            </div>
             <p className="text-stone-300 text-xs font-mono break-all select-all">{crewLink}</p>
-            <p className="text-stone-500 text-[10px] mt-2">Share this link with your crew. No login needed.</p>
           </div>
         )}
 
