@@ -44,7 +44,7 @@ export default function Home() {
   }
 
   return (
-    <>
+    <div className="overflow-x-hidden w-full">
       {/* Navigation */}
       <nav className="fixed top-0 w-full bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
@@ -331,6 +331,6 @@ export default function Home() {
           <p className="text-xs text-stone-600">&copy; 2026 JobProof</p>
         </div>
       </footer>
-    </>
+    </div>
   )
 }

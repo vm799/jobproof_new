@@ -40,6 +40,7 @@ export interface PersistedJob {
   notes: string
   signature?: string
   timestamp: number
+  w3w?: string
 }
 
 export interface OutboxEntry {
