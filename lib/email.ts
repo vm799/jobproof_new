@@ -77,8 +77,6 @@ export function welcomeEmail(): string {
     <p style="text-align:center;margin-top:28px;">
       <a href="${APP_URL}/demo" class="cta">Start Documenting Jobs</a>
     </p>
-    <div class="divider"></div>
-    <p style="font-size:13px;color:#78716c;">Questions? Just reply to this email &mdash; we read every message.</p>
   `)
 }
 
