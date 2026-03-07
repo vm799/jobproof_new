@@ -16,6 +16,7 @@ import PhotoStep from './components/PhotoStep'
 import LocationStep from './components/LocationStep'
 import NotesStep from './components/NotesStep'
 import SignatureStep from './components/SignatureStep'
+import SatisfactionStep from './components/SatisfactionStep'
 import ReviewStep from './components/ReviewStep'
 import ExportStep from './components/ExportStep'
 
@@ -52,6 +53,8 @@ export default function Demo() {
           signature: job.signature,
           timestamp: job.timestamp,
           w3w: job.w3w,
+          clientSatisfied: job.clientSatisfied,
+          clientFeedback: job.clientFeedback,
         })
       }
       setRestored(true)
@@ -165,7 +168,7 @@ export default function Demo() {
     if (!signatureCanvasRef.current) return
     const signature = signatureCanvasRef.current.toDataURL('image/png')
     setJobData(prev => ({ ...prev, signature }))
-    setStep('review')
+    setStep('satisfaction')
   }
 
   const clearSignature = () => {
@@ -326,6 +329,16 @@ export default function Demo() {
             signatureCanvasRef={signatureCanvasRef}
             onConfirm={handleSignature}
             onClear={clearSignature}
+          />
+        )}
+
+        {step === 'satisfaction' && (
+          <SatisfactionStep
+            clientSatisfied={jobData.clientSatisfied ?? false}
+            clientFeedback={jobData.clientFeedback ?? ''}
+            onSatisfiedChange={(satisfied) => setJobData(prev => ({ ...prev, clientSatisfied: satisfied }))}
+            onFeedbackChange={(feedback) => setJobData(prev => ({ ...prev, clientFeedback: feedback }))}
+            onNext={() => setStep('review')}
           />
         )}
 
