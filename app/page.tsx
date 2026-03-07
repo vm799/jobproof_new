@@ -115,7 +115,7 @@ export default function Home() {
               },
               {
                 title: 'Lien Claims Denied',
-                desc: 'Without timestamped, location-verified photos, your lien claim gets rejected. $50k+ loss.'
+                desc: 'Without timestamped, location-verified photos, your lien claim gets rejected. £50k+ loss.'
               }
             ].map((item, i) => (
               <div key={i} className="bg-white rounded-md shadow-sm p-6 border-l-4 border-red-500">
@@ -201,14 +201,14 @@ export default function Home() {
             {[
               {
                 name: 'Solo',
-                price: '$29',
+                price: '£29',
                 period: '/month',
                 desc: 'For individual contractors',
                 features: ['Unlimited jobs', 'Offline-first', 'GPS + crypto seal', 'Email support']
               },
               {
                 name: 'Team',
-                price: '$99',
+                price: '£99',
                 period: '/month',
                 desc: 'For small crews',
                 features: ['5 team members', 'All Solo features', 'Manager dashboard', 'Lien-ready exports', 'Priority support'],
@@ -313,7 +313,7 @@ export default function Home() {
               },
               {
                 q: 'How much does it cost?',
-                a: 'From $29/month for solo contractors to $99/month for teams. Try 14 days free, no credit card.'
+                a: 'From £29/month for solo contractors to £99/month for teams. Try 14 days free, no credit card.'
               }
             ].map((faq, i) => (
               <div key={i} className="bg-stone-50 p-5 rounded-md">
