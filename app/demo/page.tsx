@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { ArrowLeftIcon, CameraIcon, MapPinIcon, CheckIcon } from '@heroicons/react/20/solid'
 import Link from 'next/link'
+import Image from 'next/image'
 import { saveJob, loadLatestJob, deleteJob, addToOutbox, getOutboxPending, removeFromOutbox } from '@/lib/db'
 import type { PersistedJob } from '@/lib/db'
 import { useOnlineStatus } from '@/lib/useOnlineStatus'
@@ -238,8 +239,24 @@ export default function Demo() {
 <body>
 <div class="page">
   <div class="header">
-    <h1>JobProof Report</h1>
-    <div class="subtitle">Tamper-Proof Work Documentation</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" width="44" height="44" style="flex-shrink:0;">
+        <defs>
+          <linearGradient id="cg" x1="60" y1="80" x2="160" y2="60" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#f59e0b"/>
+            <stop offset="60%" stop-color="#f97316"/>
+            <stop offset="100%" stop-color="#ea580c"/>
+          </linearGradient>
+        </defs>
+        <path d="M100 12 L168 38 L168 100 C168 142 136 172 100 188 C64 172 32 142 32 100 L32 38 Z" fill="#1e2d5e"/>
+        <path d="M100 22 L158 45 L158 100 C158 136 130 163 100 177 C70 163 42 136 42 100 L42 45 Z" fill="#243570"/>
+        <path d="M63 102 L87 128 L145 70" stroke="url(#cg)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div>
+        <h1 style="margin:0;">JobProof Report</h1>
+        <div class="subtitle">Tamper-Proof Work Documentation</div>
+      </div>
+    </div>
   </div>
   <div class="meta-bar">
     <div class="meta-item"><span class="meta-label">Job ID</span><span class="meta-value">${jobId}</span></div>
@@ -372,7 +389,10 @@ export default function Demo() {
           <ArrowLeftIcon className="w-4 h-4" />
           Back
         </Link>
-        <h1 className="text-sm font-bold tracking-wide uppercase">JobProof</h1>
+        <div className="flex items-center gap-2">
+          <Image src="/logo.svg" alt="JobProof" width={26} height={26} priority />
+          <h1 className="text-sm font-bold tracking-wide">JobProof</h1>
+        </div>
         <div className="flex items-center gap-2">
           {!isOnline && (
             <span className="text-xs bg-amber-500 text-slate-900 px-2 py-0.5 rounded font-bold">OFFLINE</span>
