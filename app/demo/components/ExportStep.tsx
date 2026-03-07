@@ -95,12 +95,20 @@ export default function ExportStep({
         >
           Start New Job
         </button>
-        <Link
-          href="/#email-form"
-          className="w-full border-2 border-slate-900 text-slate-900 py-3 rounded-md font-medium hover:bg-slate-50 text-center block transition-colors text-sm"
-        >
-          Get Full Version ($29/month)
-        </Link>
+        <div className="flex gap-3">
+          <Link
+            href="/"
+            className="flex-1 border-2 border-stone-300 text-stone-600 py-3 rounded-md font-medium hover:border-stone-400 text-center transition-colors text-sm"
+          >
+            Back to Home
+          </Link>
+          <Link
+            href="/login"
+            className="flex-1 border-2 border-slate-900 text-slate-900 py-3 rounded-md font-medium hover:bg-slate-50 text-center transition-colors text-sm"
+          >
+            Manager Dashboard
+          </Link>
+        </div>
       </div>
     </div>
   )
