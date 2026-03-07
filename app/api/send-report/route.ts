@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { sendReportSchema } from '@/lib/validation'
 import { rateLimit } from '@/lib/rate-limit'
+import { getAuthCookie } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,6 +10,11 @@ export async function POST(request: NextRequest) {
     const { success } = rateLimit(`report:${ip}`, { maxRequests: 5, windowMs: 60_000 })
     if (!success) {
       return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+    }
+
+    const managerId = await getAuthCookie()
+    if (!managerId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()

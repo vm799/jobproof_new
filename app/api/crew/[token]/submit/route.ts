@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { getServiceClient } from '@/lib/supabase'
+import { escapeHtml } from '@/lib/sanitize'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest, { params }: { params: { token: string } }) {
+  const ip = request.headers.get('x-forwarded-for') || 'unknown'
+  const { success } = rateLimit(`crew-submit:${ip}`, { maxRequests: 5, windowMs: 60_000 })
+  if (!success) {
+    return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+  }
+
   const supabase = getServiceClient()
 
   const { data: job, error: fetchError } = await supabase
@@ -61,10 +69,10 @@ export async function POST(request: NextRequest, { params }: { params: { token: 
   <div class="body">
     <div class="detail">
       <div class="detail-label">Job</div>
-      <div class="detail-value">${job.title}</div>
+      <div class="detail-value">${escapeHtml(job.title || '')}</div>
     </div>
-    ${job.address ? `<div class="detail"><div class="detail-label">Address</div><div class="detail-value">${job.address}</div></div>` : ''}
-    ${job.crew_name ? `<div class="detail"><div class="detail-label">Crew</div><div class="detail-value">${job.crew_name}</div></div>` : ''}
+    ${job.address ? `<div class="detail"><div class="detail-label">Address</div><div class="detail-value">${escapeHtml(job.address || '')}</div></div>` : ''}
+    ${job.crew_name ? `<div class="detail"><div class="detail-label">Crew</div><div class="detail-value">${escapeHtml(job.crew_name || '')}</div></div>` : ''}
     <p>Your crew has submitted their work evidence including photos, GPS location, and client signature.</p>
     <a href="${jobUrl}" class="cta">View Evidence</a>
   </div>

@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { getAuthCookie } from '@/lib/auth'
 import { updateJobSchema } from '@/lib/validation'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+  const ip = request.headers.get('x-forwarded-for') || 'unknown'
+  const { success } = rateLimit(`job-get:${ip}`, { maxRequests: 30, windowMs: 60_000 })
+  if (!success) {
+    return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+  }
+
   const managerId = getAuthCookie()
   if (!managerId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -25,6 +32,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  const ip = request.headers.get('x-forwarded-for') || 'unknown'
+  const { success } = rateLimit(`job-patch:${ip}`, { maxRequests: 10, windowMs: 60_000 })
+  if (!success) {
+    return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+  }
+
   const managerId = getAuthCookie()
   if (!managerId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -48,8 +61,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (updates.title) allowed.title = updates.title
     if (updates.address !== undefined) allowed.address = updates.address
     if (updates.instructions !== undefined) allowed.instructions = updates.instructions
-    if (body.crew_name !== undefined) allowed.crew_name = body.crew_name
-    if (body.crew_email !== undefined) allowed.crew_email = body.crew_email
+    if (updates.crewName !== undefined) allowed.crew_name = updates.crewName
+    if (updates.crewEmail !== undefined) allowed.crew_email = updates.crewEmail
 
     const { data: job, error } = await supabase
       .from('jobs')
@@ -71,6 +84,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  const ip = request.headers.get('x-forwarded-for') || 'unknown'
+  const { success } = rateLimit(`job-delete:${ip}`, { maxRequests: 5, windowMs: 60_000 })
+  if (!success) {
+    return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+  }
+
   const managerId = getAuthCookie()
   if (!managerId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

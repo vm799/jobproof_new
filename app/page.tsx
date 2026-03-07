@@ -22,6 +22,7 @@ export default function Home() {
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [subscribeError, setSubscribeError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,9 +36,11 @@ export default function Home() {
       if (res.ok) {
         setSubmitted(true)
         setEmail('')
+        setSubscribeError('')
       }
     } catch (err) {
       console.error(err)
+      setSubscribeError('Something went wrong. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -280,6 +283,7 @@ export default function Home() {
               </button>
             </form>
           )}
+          {subscribeError && <p className="text-red-500 text-sm mt-2">{subscribeError}</p>}
         </div>
       </section>
 
