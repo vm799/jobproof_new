@@ -2,7 +2,21 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { CheckIcon, ArrowRightIcon } from '@heroicons/react/20/solid'
+
+function Logo({ size = 32, className = '' }: { size?: number; className?: string }) {
+  return (
+    <Image
+      src="/logo.svg"
+      alt="JobProof logo"
+      width={size}
+      height={size}
+      className={className}
+      priority
+    />
+  )
+}
 
 export default function Home() {
   const [email, setEmail] = useState('')
@@ -33,8 +47,11 @@ export default function Home() {
     <>
       {/* Navigation */}
       <nav className="fixed top-0 w-full bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="text-xl font-bold text-white tracking-tight">JobProof</div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+          <Link href="/" className="flex items-center gap-2.5">
+            <Logo size={34} />
+            <span className="text-xl font-bold text-white tracking-tight">JobProof</span>
+          </Link>
           <div className="hidden sm:flex items-center gap-6">
             <a href="#features" className="text-stone-400 hover:text-white text-sm transition-colors">Features</a>
             <a href="#pricing" className="text-stone-400 hover:text-white text-sm transition-colors">Pricing</a>
@@ -52,6 +69,9 @@ export default function Home() {
       {/* Hero */}
       <section className="pt-28 pb-16 px-4 bg-slate-900">
         <div className="max-w-4xl mx-auto text-center">
+          <div className="flex justify-center mb-6">
+            <Logo size={72} />
+          </div>
           <p className="text-amber-400 text-sm font-bold uppercase tracking-widest mb-4">Offline-First Field Evidence</p>
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
             Never Lose a<br />Lien Claim Again
@@ -144,31 +164,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Case Study */}
-      <section className="py-16 px-4 bg-stone-50">
-        <div className="max-w-3xl mx-auto">
-          <div className="bg-white rounded-md shadow-sm border border-stone-200 overflow-hidden">
-            <div className="bg-slate-900 px-6 py-4">
-              <p className="text-amber-400 text-xs font-bold uppercase tracking-wider">Case Study</p>
-              <h2 className="text-lg font-bold text-white mt-1">Roofing Job Dispute &mdash; $45,000 Protected</h2>
-            </div>
-            <div className="p-6 space-y-4 text-sm leading-relaxed">
-              <p className="text-stone-700">
-                <span className="font-bold text-slate-900">Without JobProof:</span> Johnson Roofing completed a $45k roof repair. Client disputed completion. No before/after photos. Lien claim denied. Lost $45,000.
-              </p>
-              <p className="text-stone-700">
-                <span className="font-bold text-slate-900">With JobProof:</span> Crew takes before photo offline. Client signs off on-site. GPS timestamp added. File sealed cryptographically. Claim approved in 48 hours.
-              </p>
-              <div className="bg-emerald-50 border border-emerald-200 rounded-md p-4">
-                <p className="text-emerald-800 font-bold">$45,000 protected. 48 hours instead of months.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* How It Works */}
-      <section id="features" className="py-16 px-4 bg-white">
+      <section id="features" className="py-16 px-4 bg-stone-50">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-2xl font-bold text-slate-900 text-center mb-10">How It Works</h2>
 
@@ -192,7 +189,7 @@ export default function Home() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-16 px-4 bg-stone-50">
+      <section id="pricing" className="py-16 px-4 bg-white">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-2xl font-bold text-slate-900 text-center mb-10">Simple Pricing</h2>
 
@@ -225,7 +222,7 @@ export default function Home() {
                 {plan.highlight && (
                   <div className="bg-amber-500 text-slate-900 text-center py-1.5 text-xs font-bold uppercase tracking-wider">Most Popular</div>
                 )}
-                <div className={`p-6 bg-white ${plan.highlight ? '' : ''}`}>
+                <div className="p-6 bg-white">
                   <h3 className="text-lg font-bold text-slate-900">{plan.name}</h3>
                   <div className="mt-2 mb-1">
                     <span className="text-3xl font-bold text-slate-900">{plan.price}</span>
@@ -253,6 +250,9 @@ export default function Home() {
       {/* Email Capture */}
       <section id="email-form" className="py-16 px-4 bg-slate-900">
         <div className="max-w-2xl mx-auto text-center">
+          <div className="flex justify-center mb-5">
+            <Logo size={48} />
+          </div>
           <h2 className="text-2xl font-bold text-white mb-3">Try Free for 14 Days</h2>
           <p className="text-stone-400 mb-8 text-sm">No credit card. No strings. Offline demo works immediately.</p>
 
@@ -321,10 +321,14 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-stone-500 py-8 px-4 border-t border-slate-800">
-        <div className="max-w-6xl mx-auto text-center text-xs">
-          <p className="text-stone-400 font-medium">&copy; 2026 JobProof</p>
-          <p className="mt-1">Protecting construction crews and securing lien claims.</p>
+      <footer className="bg-slate-900 text-stone-500 py-10 px-4 border-t border-slate-800">
+        <div className="max-w-6xl mx-auto flex flex-col items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <Logo size={28} />
+            <span className="text-white font-bold text-base tracking-tight">JobProof</span>
+          </div>
+          <p className="text-xs text-stone-500">Protecting construction crews and securing lien claims.</p>
+          <p className="text-xs text-stone-600">&copy; 2026 JobProof</p>
         </div>
       </footer>
     </>
