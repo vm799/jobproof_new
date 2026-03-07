@@ -41,7 +41,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     return NextResponse.json({ error: 'No crew email set for this job' }, { status: 400 })
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jobproof.pro'
   const jobUrl = `${appUrl}/job/${job.crew_token}`
   const managerName = job.managers?.name || job.managers?.company || job.managers?.email || 'Your manager'
 

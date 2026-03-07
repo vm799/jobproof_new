@@ -39,7 +39,7 @@ export async function POST(request: NextRequest, { params }: { params: { token: 
   if (managerEmail && process.env.RESEND_API_KEY) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY)
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jobproof.pro'
       const jobUrl = `${appUrl}/dashboard/job/${job.id}`
 
       await resend.emails.send({

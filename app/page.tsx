@@ -59,6 +59,7 @@ export default function Home() {
             <a href="#features" className="text-stone-400 hover:text-white text-sm transition-colors">Features</a>
             <a href="#pricing" className="text-stone-400 hover:text-white text-sm transition-colors">Pricing</a>
             <a href="#faq" className="text-stone-400 hover:text-white text-sm transition-colors">FAQ</a>
+            <Link href="/login" className="text-stone-400 hover:text-white text-sm transition-colors">Manager Login</Link>
             <Link href="/demo" className="bg-amber-500 hover:bg-amber-600 text-slate-900 px-4 py-2 rounded-md text-sm font-bold transition-colors">
               Try Demo
             </Link>
@@ -342,7 +343,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-stone-500 py-10 px-4 border-t border-slate-800">
+      <footer className="bg-slate-900 text-stone-500 py-10 pb-28 sm:pb-10 px-4 border-t border-slate-800">
         <div className="max-w-6xl mx-auto flex flex-col items-center gap-3">
           <div className="flex items-center gap-2.5">
             <Logo size={28} />
@@ -351,10 +352,36 @@ export default function Home() {
           <p className="text-xs text-stone-500">Protecting construction crews and securing lien claims.</p>
           <div className="flex items-center gap-4 text-xs text-stone-600">
             <Link href="/login" className="hover:text-stone-400 transition-colors">Manager Login</Link>
+            <Link href="/demo" className="hover:text-stone-400 transition-colors">Crew Demo</Link>
             <span>&copy; 2026 JobProof</span>
           </div>
         </div>
       </footer>
+
+      {/* Sticky bottom bar - mobile only */}
+      <div className="fixed bottom-0 left-0 right-0 sm:hidden z-50 bg-slate-900/95 backdrop-blur-sm border-t border-slate-700 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="flex gap-3">
+          <Link
+            href="/login"
+            className="flex-1 flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white py-3.5 rounded-md font-bold text-sm transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+            </svg>
+            Manager
+          </Link>
+          <Link
+            href="/demo"
+            className="flex-1 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-900 py-3.5 rounded-md font-bold text-sm transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+            </svg>
+            Crew
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }
