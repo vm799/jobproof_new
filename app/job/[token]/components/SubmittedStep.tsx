@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { CheckIcon } from '@heroicons/react/20/solid'
 import { useOnlineStatus } from '@/lib/useOnlineStatus'
+import { deleteJob } from '@/lib/db'
 
 interface EvidenceData {
   beforePhoto?: string
@@ -49,6 +50,8 @@ export default function SubmittedStep({ evidence, token, jobTitle, submittedOnli
             })
           })
           await fetch(`/api/crew/${token}/submit`, { method: 'POST' })
+          // Clean up IndexedDB
+          try { await deleteJob(`pending-${token}`) } catch {}
           setPendingSync(false)
           setReportSent(true)
         } catch {
@@ -113,6 +116,8 @@ ${evidence.signature ? `<div class="section"><div class="section-title">Client S
         })
       })
       await fetch(`/api/crew/${token}/submit`, { method: 'POST' })
+      // Clean up IndexedDB
+      try { await deleteJob(`pending-${token}`) } catch {}
       setReportSent(true)
       setPendingSync(false)
     } catch {

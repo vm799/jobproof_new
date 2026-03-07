@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { useParams } from 'next/navigation'
 import { useOnlineStatus } from '@/lib/useOnlineStatus'
+import { saveJob, loadJob, deleteJob } from '@/lib/db'
 import StepProgressBar from './components/StepProgressBar'
 import JobDetailsStep from './components/JobDetailsStep'
 import PhotoCaptureStep from './components/PhotoCaptureStep'
@@ -57,14 +58,14 @@ export default function CrewJobPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const signatureCanvasRef = useRef<HTMLCanvasElement>(null)
 
-  // Load job info
+  // Load job info + check for pending offline evidence
   useEffect(() => {
-    fetch(`/api/crew/${token}`)
-      .then(res => res.json())
-      .then(data => {
+    const init = async () => {
+      try {
+        const res = await fetch(`/api/crew/${token}`)
+        const data = await res.json()
         if (data.job) {
           setJobInfo(data.job)
-          // If already accepted or further, skip to appropriate step
           if (data.job.status === 'accepted' || data.job.status === 'in_progress') {
             setStep('photo-before')
           } else if (data.job.status === 'submitted' || data.job.status === 'completed') {
@@ -73,9 +74,34 @@ export default function CrewJobPage() {
         } else {
           setError('Job not found')
         }
-      })
-      .catch(() => setError('Failed to load job'))
-      .finally(() => setLoading(false))
+      } catch {
+        setError('Failed to load job')
+      }
+
+      // Restore pending evidence from IndexedDB (survives app close)
+      try {
+        const pending = await loadJob(`pending-${token}`)
+        if (pending) {
+          setEvidence({
+            beforePhoto: pending.beforePhoto,
+            afterPhoto: pending.afterPhoto,
+            latitude: pending.latitude,
+            longitude: pending.longitude,
+            w3w: pending.w3w,
+            notes: pending.notes,
+            signature: pending.signature,
+            timestamp: pending.timestamp,
+          })
+          setSubmittedOnline(false)
+          setStep('submitted')
+        }
+      } catch {
+        // IndexedDB not available — proceed normally
+      }
+
+      setLoading(false)
+    }
+    init()
   }, [token])
 
   // Camera cleanup
@@ -203,10 +229,33 @@ export default function CrewJobPage() {
         })
         await fetch(`/api/crew/${token}/submit`, { method: 'POST' })
         didSubmitOnline = true
+        // Clean up any pending IndexedDB entry
+        try { await deleteJob(`pending-${token}`) } catch {}
       }
     } catch {
-      // Offline or network error — SubmittedStep will handle retry
+      // Offline or network error
     }
+
+    // If not submitted online, persist evidence to IndexedDB so it survives app close
+    if (!didSubmitOnline) {
+      try {
+        await saveJob({
+          id: `pending-${token}`,
+          step: 'submitted',
+          beforePhoto: evidence.beforePhoto,
+          afterPhoto: evidence.afterPhoto,
+          latitude: evidence.latitude,
+          longitude: evidence.longitude,
+          w3w: evidence.w3w,
+          notes: evidence.notes,
+          signature: evidence.signature,
+          timestamp: evidence.timestamp,
+        })
+      } catch {
+        // IndexedDB not available — evidence stays in memory only
+      }
+    }
+
     setSubmittedOnline(didSubmitOnline)
     setStep('submitted')
     setSubmitting(false)
