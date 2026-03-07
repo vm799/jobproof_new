@@ -5,6 +5,7 @@ import { ArrowLeftIcon, CameraIcon, MapPinIcon, CheckIcon } from '@heroicons/rea
 import Link from 'next/link'
 import Image from 'next/image'
 import { saveJob, loadLatestJob, deleteJob, addToOutbox, getOutboxPending, removeFromOutbox } from '@/lib/db'
+import { SEAL_LENGTH } from '@/lib/constants'
 import type { PersistedJob } from '@/lib/db'
 import { useOnlineStatus } from '@/lib/useOnlineStatus'
 
@@ -200,7 +201,7 @@ export default function Demo() {
       notes: jobData.notes,
       timestamp: jobData.timestamp
     })
-    return btoa(data).slice(0, 32)
+    return btoa(data).slice(0, SEAL_LENGTH)
   }
 
   const jobId = jobIdRef.current
@@ -614,7 +615,7 @@ export default function Demo() {
                 </div>
                 <p className="text-amber-900 font-mono text-sm">{jobData.latitude.toFixed(6)}, {jobData.longitude?.toFixed(6)}</p>
                 {jobData.w3w && (
-                  <p className="text-amber-800 font-mono text-sm mt-1">///&thinsp;{jobData.w3w}</p>
+                  <p className="text-amber-800 font-mono text-sm mt-1">{'///'}&thinsp;{jobData.w3w}</p>
                 )}
               </div>
             )}
@@ -749,7 +750,7 @@ export default function Demo() {
                   <MapPinIcon className="w-4 h-4 text-amber-600 flex-shrink-0" />
                   <div>
                     <p className="text-amber-900 font-mono text-xs">{jobData.latitude.toFixed(6)}, {jobData.longitude?.toFixed(6)}</p>
-                    {jobData.w3w && <p className="text-amber-800 font-mono text-xs mt-0.5">/// {jobData.w3w}</p>}
+                    {jobData.w3w && <p className="text-amber-800 font-mono text-xs mt-0.5">{'///'} {jobData.w3w}</p>}
                   </div>
                 </div>
               )}

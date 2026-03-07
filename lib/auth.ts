@@ -1,15 +1,13 @@
 import { cookies } from 'next/headers'
 import { getServiceClient } from './supabase'
-
-const COOKIE_NAME = 'jobproof_session'
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 30 // 30 days
+import { COOKIE_NAME, COOKIE_MAX_AGE_SECONDS } from '@/lib/constants'
 
 export async function setAuthCookie(managerId: string) {
   cookies().set(COOKIE_NAME, managerId, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: COOKIE_MAX_AGE,
+    maxAge: COOKIE_MAX_AGE_SECONDS,
     path: '/',
   })
 }

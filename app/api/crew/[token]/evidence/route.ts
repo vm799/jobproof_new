@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
+import { evidenceSchema } from '@/lib/validation'
 
 export async function POST(request: NextRequest, { params }: { params: { token: string } }) {
   const supabase = getServiceClient()
@@ -16,18 +17,32 @@ export async function POST(request: NextRequest, { params }: { params: { token: 
 
   try {
     const body = await request.json()
+    const parsed = evidenceSchema.safeParse({
+      beforePhoto: body.before_photo,
+      afterPhoto: body.after_photo,
+      notes: body.notes,
+      signature: body.signature,
+      latitude: body.latitude,
+      longitude: body.longitude,
+      w3w: body.w3w,
+      seal: body.seal,
+    })
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
+    }
+    const evidence = parsed.data
     const updates: Record<string, unknown> = {}
 
     // Accept base64 photos directly (store as data URLs for now)
     // In production, these would upload to Supabase Storage
-    if (body.before_photo) updates.before_photo_url = body.before_photo
-    if (body.after_photo) updates.after_photo_url = body.after_photo
-    if (body.latitude !== undefined) updates.latitude = body.latitude
-    if (body.longitude !== undefined) updates.longitude = body.longitude
-    if (body.w3w) updates.w3w = body.w3w
-    if (body.notes !== undefined) updates.notes = body.notes
-    if (body.signature) updates.signature_url = body.signature
-    if (body.seal) updates.seal = body.seal
+    if (evidence.beforePhoto) updates.before_photo_url = evidence.beforePhoto
+    if (evidence.afterPhoto) updates.after_photo_url = evidence.afterPhoto
+    if (evidence.latitude !== undefined) updates.latitude = evidence.latitude
+    if (evidence.longitude !== undefined) updates.longitude = evidence.longitude
+    if (evidence.w3w) updates.w3w = evidence.w3w
+    if (evidence.notes !== undefined) updates.notes = evidence.notes
+    if (evidence.signature) updates.signature_url = evidence.signature
+    if (evidence.seal) updates.seal = evidence.seal
 
     // Update status to in_progress if currently accepted
     if (job.status === 'accepted' || job.status === 'sent' || job.status === 'created') {

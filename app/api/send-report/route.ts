@@ -1,17 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { sendReportSchema } from '@/lib/validation'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, html, jobId } = await request.json()
-
-    if (!email || !email.includes('@')) {
-      return NextResponse.json({ error: 'Invalid email' }, { status: 400 })
+    const ip = request.headers.get('x-forwarded-for') || 'unknown'
+    const { success } = rateLimit(`report:${ip}`, { maxRequests: 5, windowMs: 60_000 })
+    if (!success) {
+      return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
     }
 
-    if (!html) {
-      return NextResponse.json({ error: 'Missing report content' }, { status: 400 })
+    const body = await request.json()
+    const parsed = sendReportSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
     }
+    const { to: email, subject, html } = parsed.data
+    const jobId = (body as Record<string, unknown>).jobId
 
     if (!process.env.RESEND_API_KEY) {
       console.log('Demo mode: Report email requested (Resend not configured):', email)
@@ -26,7 +32,7 @@ export async function POST(request: NextRequest) {
     const { error } = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'JobProof <onboarding@resend.dev>',
       to: email,
-      subject: `JobProof Report - ${jobId || 'Job Documentation'}`,
+      subject,
       html
     })
 

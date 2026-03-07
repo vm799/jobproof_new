@@ -1,16 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { subscribeSchema } from '@/lib/validation'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email } = await request.json()
+    const ip = request.headers.get('x-forwarded-for') || 'unknown'
+    const { success } = rateLimit(`subscribe:${ip}`, { maxRequests: 3, windowMs: 60_000 })
+    if (!success) {
+      return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+    }
 
-    if (!email || !email.includes('@')) {
+    const body = await request.json()
+    const parsed = subscribeSchema.safeParse(body)
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Invalid email' },
+        { error: parsed.error.issues[0].message },
         { status: 400 }
       )
     }
+    const { email } = parsed.data
 
     if (!process.env.RESEND_API_KEY) {
       console.log('Demo mode: Sign-up received (Resend not configured):', email)
