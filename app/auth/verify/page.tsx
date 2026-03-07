@@ -1,12 +1,20 @@
 'use client'
 
-import { Suspense } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 function VerifyContent() {
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
+  const token = searchParams.get('token')
+
+  // Redirect to API route for server-side verification
+  useEffect(() => {
+    if (token && !error) {
+      window.location.href = `/api/auth/verify?token=${encodeURIComponent(token)}`
+    }
+  }, [token, error])
 
   const errorMessages: Record<string, string> = {
     missing_token: 'No login token found. Please request a new login link.',

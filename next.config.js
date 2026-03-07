@@ -3,6 +3,7 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
+  buildExcludes: [/app-build-manifest\.json$/],
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/fonts\.(?:gstatic)\.com\/.*/i,

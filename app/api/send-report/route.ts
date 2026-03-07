@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
-import { sendReportSchema } from '@/lib/validation'
 import { rateLimit } from '@/lib/rate-limit'
-import { validateCsrf } from '@/lib/csrf'
-import { getAuthCookie } from '@/lib/auth'
+import { z } from 'zod'
+
+const reportSchema = z.object({
+  email: z.string().email('Invalid email address').max(255),
+  html: z.string().min(1).max(500_000),
+  jobId: z.string().max(100).optional(),
+})
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,25 +17,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
     }
 
-    if (!validateCsrf(request)) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 })
-    }
-
-    const managerId = await getAuthCookie()
-    if (!managerId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const body = await request.json()
-    const parsed = sendReportSchema.safeParse(body)
+    const parsed = reportSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
     }
-    const { to: email, subject, html } = parsed.data
-    const jobId = (body as Record<string, unknown>).jobId
+    const { email, html, jobId } = parsed.data
 
     if (!process.env.RESEND_API_KEY) {
-      console.log('Demo mode: Report email requested (Resend not configured):', email)
       return NextResponse.json(
         { success: true, message: 'Email sent (demo mode)' },
         { status: 200 }
@@ -43,7 +36,7 @@ export async function POST(request: NextRequest) {
     const { error } = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'JobProof <onboarding@resend.dev>',
       to: email,
-      subject,
+      subject: `JobProof Report${jobId ? ` - ${jobId}` : ''}`,
       html
     })
 
