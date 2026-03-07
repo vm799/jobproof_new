@@ -31,6 +31,7 @@ interface JobData {
   notes: string
   signature?: string
   timestamp: number
+  w3w?: string
 }
 
 export default function Demo() {
@@ -62,6 +63,7 @@ export default function Demo() {
           notes: job.notes,
           signature: job.signature,
           timestamp: job.timestamp,
+          w3w: job.w3w,
         })
       }
       setRestored(true)
@@ -154,8 +156,21 @@ export default function Demo() {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          setJobData(prev => ({ ...prev, latitude: pos.coords.latitude, longitude: pos.coords.longitude }))
+          const lat = pos.coords.latitude
+          const lng = pos.coords.longitude
+          setJobData(prev => ({ ...prev, latitude: lat, longitude: lng }))
           setStep('notes')
+          // Non-blocking w3w lookup (online only)
+          if (navigator.onLine) {
+            fetch(`/api/w3w?lat=${lat}&lng=${lng}`)
+              .then(res => res.ok ? res.json() : null)
+              .then(data => {
+                if (data?.words) {
+                  setJobData(prev => ({ ...prev, w3w: data.words }))
+                }
+              })
+              .catch(() => {})
+          }
         },
         () => { setStep('notes') }
       )
@@ -181,6 +196,7 @@ export default function Demo() {
       afterPhoto: jobData.afterPhoto?.slice(0, 50),
       latitude: jobData.latitude,
       longitude: jobData.longitude,
+      w3w: jobData.w3w,
       notes: jobData.notes,
       timestamp: jobData.timestamp
     })
@@ -193,6 +209,7 @@ export default function Demo() {
     const seal = generateSeal()
     const ts = new Date(jobData.timestamp)
     const location = jobData.latitude ? `${jobData.latitude.toFixed(6)}, ${jobData.longitude?.toFixed(6)}` : 'Not captured'
+    const w3wDisplay = jobData.w3w ? `/// ${jobData.w3w}` : ''
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -283,6 +300,7 @@ export default function Demo() {
       <div class="location-pin">&#x1F4CD;</div>
       <div>
         <div class="location-coords">${location}</div>
+        ${w3wDisplay ? `<div class="location-coords" style="color:#92400e;margin-top:4px;">${w3wDisplay}</div>` : ''}
         <div class="location-label">${jobData.latitude ? `Lat ${jobData.latitude.toFixed(6)}, Lon ${jobData.longitude?.toFixed(6)}` : 'Location was not captured for this job'}</div>
       </div>
     </div>
@@ -589,6 +607,9 @@ export default function Demo() {
                   <p className="text-emerald-700 text-xs font-bold uppercase tracking-wide">Location captured</p>
                 </div>
                 <p className="text-amber-900 font-mono text-sm">{jobData.latitude.toFixed(6)}, {jobData.longitude?.toFixed(6)}</p>
+                {jobData.w3w && (
+                  <p className="text-amber-800 font-mono text-sm mt-1">///&thinsp;{jobData.w3w}</p>
+                )}
               </div>
             )}
 
@@ -720,7 +741,10 @@ export default function Demo() {
               {jobData.latitude && (
                 <div className="bg-amber-50 border border-amber-200 p-3 rounded-md flex items-center gap-2">
                   <MapPinIcon className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                  <p className="text-amber-900 font-mono text-xs">{jobData.latitude.toFixed(6)}, {jobData.longitude?.toFixed(6)}</p>
+                  <div>
+                    <p className="text-amber-900 font-mono text-xs">{jobData.latitude.toFixed(6)}, {jobData.longitude?.toFixed(6)}</p>
+                    {jobData.w3w && <p className="text-amber-800 font-mono text-xs mt-0.5">/// {jobData.w3w}</p>}
+                  </div>
                 </div>
               )}
 
@@ -812,7 +836,7 @@ export default function Demo() {
               <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wide">Your report includes</h3>
               <ul className="text-xs text-stone-600 space-y-1">
                 <li className="flex items-center gap-2"><CheckIcon className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> Before &amp; after photo evidence</li>
-                <li className="flex items-center gap-2"><CheckIcon className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> GPS location &amp; timestamp</li>
+                <li className="flex items-center gap-2"><CheckIcon className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> GPS location, what3words &amp; timestamp</li>
                 <li className="flex items-center gap-2"><CheckIcon className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> Client digital signature</li>
                 <li className="flex items-center gap-2"><CheckIcon className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> Cryptographic tamper-proof seal</li>
               </ul>
