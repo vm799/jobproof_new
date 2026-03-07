@@ -3,6 +3,7 @@ import { Resend } from 'resend'
 import { getServiceClient } from '@/lib/supabase'
 import { escapeHtml } from '@/lib/sanitize'
 import { rateLimit } from '@/lib/rate-limit'
+import { jobCompleteEmail } from '@/lib/email'
 
 export async function POST(request: NextRequest, { params }: { params: { token: string } }) {
   const ip = request.headers.get('x-forwarded-for') || 'unknown'
@@ -45,40 +46,12 @@ export async function POST(request: NextRequest, { params }: { params: { token: 
         from: process.env.RESEND_FROM_EMAIL || 'JobProof <onboarding@resend.dev>',
         to: managerEmail,
         subject: `Job Complete: ${job.title}`,
-        html: `<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><style>
-  body { margin: 0; padding: 0; font-family: -apple-system, sans-serif; background: #fafaf9; }
-  .wrap { max-width: 480px; margin: 0 auto; padding: 40px 20px; }
-  .card { background: #fff; border-radius: 8px; overflow: hidden; }
-  .header { background: linear-gradient(135deg, #141422, #1e1e2e); padding: 28px; text-align: center; }
-  .header h1 { color: #fff; font-size: 20px; margin: 0 0 4px; }
-  .header p { color: #10b981; font-size: 13px; margin: 0; font-weight: 600; }
-  .body { padding: 28px; text-align: center; }
-  .body p { color: #44403c; font-size: 15px; line-height: 1.6; margin: 0 0 16px; }
-  .cta { display: inline-block; background: #f59e0b; color: #141422; padding: 14px 40px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 16px; }
-  .detail { background: #f5f5f4; border-radius: 6px; padding: 16px; margin: 16px 0; text-align: left; }
-  .detail-label { font-size: 11px; color: #78716c; text-transform: uppercase; font-weight: 600; }
-  .detail-value { font-size: 15px; color: #18181b; font-weight: 500; margin-top: 2px; }
-  .footer { text-align: center; padding: 16px; font-size: 12px; color: #a8a29e; }
-</style></head><body>
-<div class="wrap"><div class="card">
-  <div class="header">
-    <h1>Job Complete</h1>
-    <p>Evidence submitted by crew</p>
-  </div>
-  <div class="body">
-    <div class="detail">
-      <div class="detail-label">Job</div>
-      <div class="detail-value">${escapeHtml(job.title || '')}</div>
-    </div>
-    ${job.address ? `<div class="detail"><div class="detail-label">Address</div><div class="detail-value">${escapeHtml(job.address || '')}</div></div>` : ''}
-    ${job.crew_name ? `<div class="detail"><div class="detail-label">Crew</div><div class="detail-value">${escapeHtml(job.crew_name || '')}</div></div>` : ''}
-    <p>Your crew has submitted their work evidence including photos, GPS location, and client signature.</p>
-    <a href="${jobUrl}" class="cta">View Evidence</a>
-  </div>
-  <div class="footer">JobProof &mdash; Tamper-proof work documentation</div>
-</div></div>
-</body></html>`
+        html: jobCompleteEmail(
+          escapeHtml(job.title || ''),
+          escapeHtml(job.address || ''),
+          escapeHtml(job.crew_name || ''),
+          jobUrl
+        )
       })
     } catch (emailErr) {
       console.error('Manager notification error:', emailErr)
