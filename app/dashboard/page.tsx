@@ -38,6 +38,7 @@ export default function DashboardPage() {
   const [creating, setCreating] = useState(false)
   const [form, setForm] = useState({ title: '', address: '', instructions: '', crewName: '', crewEmail: '' })
   const [error, setError] = useState('')
+  const [trial, setTrial] = useState<{ expired: boolean; daysLeft: number } | null>(null)
 
   const loadJobs = useCallback(async () => {
     try {
@@ -58,6 +59,7 @@ export default function DashboardPage() {
   useEffect(() => {
     ensureCsrfToken()
     loadJobs()
+    fetch('/api/trial').then(r => r.json()).then(setTrial).catch(() => {})
   }, [loadJobs])
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -120,6 +122,17 @@ export default function DashboardPage() {
       </div>
 
       <div className="max-w-3xl mx-auto p-4">
+        {trial?.expired && (
+          <div className="bg-red-50 border-2 border-red-300 text-red-800 p-4 rounded-md text-sm mb-4">
+            <p className="font-bold">Your 14-day free trial has ended</p>
+            <p className="text-red-600 text-xs mt-1">Upgrade your plan to continue creating and sending jobs.</p>
+          </div>
+        )}
+        {trial && !trial.expired && trial.daysLeft <= 5 && (
+          <div className="bg-amber-50 border border-amber-300 text-amber-800 p-3 rounded-md text-sm mb-4">
+            <span className="font-bold">{trial.daysLeft} day{trial.daysLeft !== 1 ? 's' : ''}</span> left on your free trial.
+          </div>
+        )}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-md text-sm mb-4">{error}</div>
         )}

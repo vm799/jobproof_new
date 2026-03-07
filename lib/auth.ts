@@ -33,3 +33,22 @@ export async function getAuthenticatedManager() {
 
   return data
 }
+
+/** Check if the manager's trial has expired. Returns { expired, daysLeft, trialEndsAt } */
+export async function checkTrialStatus(managerId: string): Promise<{ expired: boolean; daysLeft: number; trialEndsAt: string | null }> {
+  const supabase = getServiceClient()
+  const { data } = await supabase
+    .from('managers')
+    .select('trial_ends_at')
+    .eq('id', managerId)
+    .single()
+
+  if (!data?.trial_ends_at) return { expired: false, daysLeft: 14, trialEndsAt: null }
+
+  const endsAt = new Date(data.trial_ends_at)
+  const now = new Date()
+  const msLeft = endsAt.getTime() - now.getTime()
+  const daysLeft = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60 * 24)))
+
+  return { expired: msLeft <= 0, daysLeft, trialEndsAt: data.trial_ends_at }
+}

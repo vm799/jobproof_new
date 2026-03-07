@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
-import { getAuthCookie } from '@/lib/auth'
+import { getAuthCookie, checkTrialStatus } from '@/lib/auth'
 import { createJobSchema } from '@/lib/validation'
 import { rateLimit } from '@/lib/rate-limit'
 import { validateCsrf } from '@/lib/csrf'
@@ -51,6 +51,11 @@ export async function POST(request: NextRequest) {
   const managerId = getAuthCookie()
   if (!managerId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const trial = await checkTrialStatus(managerId)
+  if (trial.expired) {
+    return NextResponse.json({ error: 'Your 14-day free trial has ended. Upgrade to continue creating jobs.' }, { status: 403 })
   }
 
   try {
