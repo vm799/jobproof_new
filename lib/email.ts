@@ -98,7 +98,7 @@ export function jobCompleteEmail(
   jobUrl: string
 ): string {
   return emailShell('Job Complete', '', `
-    <p style="text-align:center;margin:0 0 20px;"><span style="display:inline-block;background:#064e3b;color:#34d399;font-size:11px;font-weight:700;padding:6px 14px;border-radius:12px;text-transform:uppercase;letter-spacing:0.5px;border:1px solid #065f46;">Evidence Submitted</span></p>
+    <p style="text-align:center;margin:0 0 20px;"><!-- badge --><span style="display:inline-block;background:#064e3b;color:#34d399;font-size:11px;font-weight:700;padding:6px 14px;border-radius:12px;text-transform:uppercase;letter-spacing:0.5px;border:1px solid #065f46;">Evidence Submitted</span></p>
     <p style="color:#cbd5e1;font-size:15px;line-height:1.65;margin:0 0 16px;">Your crew has completed the job and submitted their evidence &mdash; including before/after photos, GPS location, and client signature.</p>
     <div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px 16px;margin:12px 0;">
       <p style="font-size:10px;color:#64748b;text-transform:uppercase;font-weight:700;letter-spacing:0.8px;margin:0;">Job</p>
