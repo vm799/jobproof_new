@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { getServiceClient } from '@/lib/supabase'
 import { getAuthCookie } from '@/lib/auth'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+  const ip = request.headers.get('x-forwarded-for') || 'unknown'
+  const { success } = rateLimit(`send-job:${ip}`, { maxRequests: 10, windowMs: 60_000 })
+  if (!success) {
+    return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+  }
+
   const managerId = getAuthCookie()
   if (!managerId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

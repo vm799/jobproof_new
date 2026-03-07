@@ -50,3 +50,6 @@ public/workbox-*.js
 # Cache
 .eslintcache
 .stylelintcache
+
+# TypeScript
+tsconfig.tsbuildinfo

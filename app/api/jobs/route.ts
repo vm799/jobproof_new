@@ -1,26 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { getAuthCookie } from '@/lib/auth'
+import { createJobSchema } from '@/lib/validation'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const managerId = getAuthCookie()
   if (!managerId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const { searchParams } = new URL(request.url)
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)))
+
   const supabase = getServiceClient()
-  const { data: jobs, error } = await supabase
+  const { data: jobs, error, count } = await supabase
     .from('jobs')
-    .select('id, title, address, crew_name, crew_email, status, created_at, sent_at, accepted_at, submitted_at, completed_at')
+    .select('id, title, address, crew_name, crew_email, status, created_at, sent_at, accepted_at, submitted_at, completed_at', { count: 'exact' })
     .eq('manager_id', managerId)
     .order('created_at', { ascending: false })
+    .range((page - 1) * limit, page * limit - 1)
 
   if (error) {
     console.error('List jobs error:', error)
     return NextResponse.json({ error: 'Failed to load jobs' }, { status: 500 })
   }
 
-  return NextResponse.json({ jobs })
+  return NextResponse.json({ jobs, page, limit, total: count ?? 0 })
 }
 
 export async function POST(request: NextRequest) {
@@ -30,11 +36,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { title, address, instructions, crew_name, crew_email } = await request.json()
-
-    if (!title || !title.trim()) {
-      return NextResponse.json({ error: 'Job title is required' }, { status: 400 })
+    const body = await request.json()
+    const parsed = createJobSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
     }
+    const { title, address, instructions } = parsed.data
 
     const supabase = getServiceClient()
     const { data: job, error } = await supabase
@@ -44,8 +51,8 @@ export async function POST(request: NextRequest) {
         title: title.trim(),
         address: address?.trim() || null,
         instructions: instructions?.trim() || null,
-        crew_name: crew_name?.trim() || null,
-        crew_email: crew_email?.trim()?.toLowerCase() || null,
+        crew_name: body.crew_name?.trim() || null,
+        crew_email: body.crew_email?.trim()?.toLowerCase() || null,
       })
       .select()
       .single()

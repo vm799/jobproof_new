@@ -90,7 +90,7 @@ export default function JobDetailPage() {
       })
       const data = await res.json()
       if (data?.job) setJob(data.job)
-    } catch { /* ignore */ }
+    } catch (err) { console.warn('Failed to load job details:', err) }
     finally { setCompleting(false) }
   }
 
@@ -234,7 +234,7 @@ export default function JobDetailPage() {
                 <MapPinIcon className="w-4 h-4 text-amber-600 flex-shrink-0" />
                 <div>
                   <p className="text-amber-900 font-mono text-xs">{job.latitude.toFixed(6)}, {job.longitude?.toFixed(6)}</p>
-                  {job.w3w && <p className="text-amber-800 font-mono text-xs mt-0.5">/// {job.w3w}</p>}
+                  {job.w3w && <p className="text-amber-800 font-mono text-xs mt-0.5">{'///'} {job.w3w}</p>}
                 </div>
               </div>
             )}

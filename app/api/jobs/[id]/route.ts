@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
 import { getAuthCookie } from '@/lib/auth'
+import { updateJobSchema } from '@/lib/validation'
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const managerId = getAuthCookie()
@@ -30,7 +31,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 
   try {
-    const updates = await request.json()
+    const body = await request.json()
+    const parsed = updateJobSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
+    }
+    const updates = parsed.data
     const supabase = getServiceClient()
 
     // Only allow certain fields to be updated by manager
@@ -42,8 +48,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (updates.title) allowed.title = updates.title
     if (updates.address !== undefined) allowed.address = updates.address
     if (updates.instructions !== undefined) allowed.instructions = updates.instructions
-    if (updates.crew_name !== undefined) allowed.crew_name = updates.crew_name
-    if (updates.crew_email !== undefined) allowed.crew_email = updates.crew_email
+    if (body.crew_name !== undefined) allowed.crew_name = body.crew_name
+    if (body.crew_email !== undefined) allowed.crew_email = body.crew_email
 
     const { data: job, error } = await supabase
       .from('jobs')
@@ -62,4 +68,45 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     console.error('Update job error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  const managerId = getAuthCookie()
+  if (!managerId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const supabase = getServiceClient()
+
+  // Fetch the job to verify ownership and status
+  const { data: job, error: fetchError } = await supabase
+    .from('jobs')
+    .select('id, status')
+    .eq('id', params.id)
+    .eq('manager_id', managerId)
+    .single()
+
+  if (fetchError || !job) {
+    return NextResponse.json({ error: 'Job not found' }, { status: 404 })
+  }
+
+  if (job.status !== 'created') {
+    return NextResponse.json(
+      { error: 'Only jobs in "created" status can be deleted' },
+      { status: 400 }
+    )
+  }
+
+  const { error: deleteError } = await supabase
+    .from('jobs')
+    .delete()
+    .eq('id', params.id)
+    .eq('manager_id', managerId)
+
+  if (deleteError) {
+    console.error('Delete job error:', deleteError)
+    return NextResponse.json({ error: 'Failed to delete job' }, { status: 500 })
+  }
+
+  return NextResponse.json({ success: true })
 }
