@@ -36,7 +36,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
   const [creating, setCreating] = useState(false)
-  const [form, setForm] = useState({ title: '', address: '', instructions: '', crew_name: '', crew_email: '' })
+  const [form, setForm] = useState({ title: '', address: '', instructions: '', crewName: '', crewEmail: '' })
   const [error, setError] = useState('')
 
   const loadJobs = useCallback(async () => {
@@ -76,8 +76,14 @@ export default function DashboardPage() {
         const data = await res.json()
         throw new Error(data.error || 'Failed to create')
       }
-      setForm({ title: '', address: '', instructions: '', crew_name: '', crew_email: '' })
+      const data = await res.json()
+      setForm({ title: '', address: '', instructions: '', crewName: '', crewEmail: '' })
       setShowCreate(false)
+      // Navigate to job detail so user can send to crew
+      if (data.job?.id) {
+        router.push(`/dashboard/job/${data.job.id}`)
+        return
+      }
       loadJobs()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to create job')
@@ -160,8 +166,8 @@ export default function DashboardPage() {
                     <label className="text-xs font-bold text-stone-500 uppercase tracking-wide">Crew Name</label>
                     <input
                       type="text"
-                      value={form.crew_name}
-                      onChange={(e) => setForm(f => ({ ...f, crew_name: e.target.value }))}
+                      value={form.crewName}
+                      onChange={(e) => setForm(f => ({ ...f, crewName: e.target.value }))}
                       placeholder="Who's doing the work?"
                       className="w-full mt-1 px-3 py-2.5 border-2 border-stone-300 rounded-md text-sm focus:border-amber-500 outline-none text-slate-900"
                     />
@@ -170,8 +176,8 @@ export default function DashboardPage() {
                     <label className="text-xs font-bold text-stone-500 uppercase tracking-wide">Crew Email</label>
                     <input
                       type="email"
-                      value={form.crew_email}
-                      onChange={(e) => setForm(f => ({ ...f, crew_email: e.target.value }))}
+                      value={form.crewEmail}
+                      onChange={(e) => setForm(f => ({ ...f, crewEmail: e.target.value }))}
                       placeholder="crew@email.com"
                       className="w-full mt-1 px-3 py-2.5 border-2 border-stone-300 rounded-md text-sm focus:border-amber-500 outline-none text-slate-900"
                     />
