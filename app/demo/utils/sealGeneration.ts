@@ -9,7 +9,8 @@ export function generateSeal(jobData: JobData): string {
     longitude: jobData.longitude,
     w3w: jobData.w3w,
     notes: jobData.notes,
-    timestamp: jobData.timestamp
+    timestamp: jobData.timestamp,
+    clientSatisfied: jobData.clientSatisfied
   })
   return btoa(data).slice(0, SEAL_LENGTH)
 }

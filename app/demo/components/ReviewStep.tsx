@@ -48,6 +48,18 @@ export default function ReviewStep({ jobData, seal, onExport }: ReviewStepProps)
           </div>
         )}
 
+        {jobData.clientSatisfied && (
+          <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-md">
+            <div className="flex items-center gap-2">
+              <CheckIcon className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              <p className="text-emerald-800 text-xs font-medium">Client confirmed work completed to satisfaction</p>
+            </div>
+            {jobData.clientFeedback && (
+              <p className="text-emerald-700 text-xs mt-1 ml-6">{jobData.clientFeedback}</p>
+            )}
+          </div>
+        )}
+
         <div className="bg-slate-900 p-3 rounded-md">
           <p className="text-[10px] text-amber-400 font-bold uppercase tracking-wide mb-1">Cryptographic Seal</p>
           <p className="text-indigo-300 font-mono text-xs break-all">{seal}</p>

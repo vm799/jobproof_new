@@ -40,6 +40,11 @@ export function buildReportHtml(jobData: JobData, jobId: string): string {
   .signature-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 20px; text-align: center; }
   .signature-box img { max-width: 320px; max-height: 160px; margin: 0 auto; display: block; }
   .signature-label { font-size: 11px; color: #16a34a; margin-top: 8px; font-weight: 500; }
+  .satisfaction-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 20px; }
+  .satisfaction-check { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; color: #166534; }
+  .satisfaction-check .tick { width: 22px; height: 22px; background: #16a34a; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; flex-shrink: 0; }
+  .satisfaction-feedback { margin-top: 12px; background: #fff; border: 1px solid #bbf7d0; border-radius: 4px; padding: 12px 16px; font-size: 13px; color: #292524; line-height: 1.5; white-space: pre-wrap; }
+  .satisfaction-feedback-label { font-size: 11px; color: #78716c; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
   .seal-section { background: #1e1e2e; border-radius: 6px; padding: 20px; }
   .seal-title { font-size: 12px; color: #fbbf24; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
   .seal-hash { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a5b4fc; word-break: break-all; background: #141422; padding: 12px; border-radius: 4px; margin-top: 8px; }
@@ -108,6 +113,16 @@ export function buildReportHtml(jobData: JobData, jobId: string): string {
       ${jobData.signature ? `<img src="${jobData.signature}" alt="Client Signature" /><div class="signature-label">Digitally signed by client</div>` : '<div style="color:#a8a29e;padding:20px;">No signature captured</div>'}
     </div>
   </div>
+  ${jobData.clientSatisfied ? `<div class="section">
+    <div class="section-title">Client Sign-Off</div>
+    <div class="satisfaction-box">
+      <div class="satisfaction-check">
+        <span class="tick">&#x2713;</span>
+        Client confirms work completed to their satisfaction
+      </div>
+      ${jobData.clientFeedback ? `<div><div class="satisfaction-feedback-label">Client Notes</div><div class="satisfaction-feedback">${jobData.clientFeedback.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div></div>` : ''}
+    </div>
+  </div>` : ''}
   <div class="section">
     <div class="section-title">Cryptographic Seal</div>
     <div class="seal-section">

@@ -1,6 +1,6 @@
-export type Step = 'intro' | 'photo-before' | 'photo-after' | 'location' | 'notes' | 'signature' | 'review' | 'export'
+export type Step = 'intro' | 'photo-before' | 'photo-after' | 'location' | 'notes' | 'signature' | 'satisfaction' | 'review' | 'export'
 
-export const STEPS: Step[] = ['intro', 'photo-before', 'photo-after', 'location', 'notes', 'signature', 'review', 'export']
+export const STEPS: Step[] = ['intro', 'photo-before', 'photo-after', 'location', 'notes', 'signature', 'satisfaction', 'review', 'export']
 
 export const STEP_LABELS: Record<Step, string> = {
   'intro': 'Start',
@@ -9,6 +9,7 @@ export const STEP_LABELS: Record<Step, string> = {
   'location': 'Location',
   'notes': 'Notes',
   'signature': 'Signature',
+  'satisfaction': 'Sign-off',
   'review': 'Review',
   'export': 'Done',
 }
@@ -22,4 +23,6 @@ export interface JobData {
   signature?: string
   timestamp: number
   w3w?: string
+  clientSatisfied?: boolean
+  clientFeedback?: string
 }

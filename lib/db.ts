@@ -41,6 +41,8 @@ export interface PersistedJob {
   signature?: string
   timestamp: number
   w3w?: string
+  clientSatisfied?: boolean
+  clientFeedback?: string
 }
 
 export interface OutboxEntry {
