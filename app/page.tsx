@@ -320,6 +320,23 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Disclaimer */}
+      <section className="py-10 px-4 bg-stone-100 border-t border-stone-200">
+        <div className="max-w-3xl mx-auto">
+          <p className="text-[10px] text-stone-400 font-bold uppercase tracking-widest mb-2">Disclaimer</p>
+          <p className="text-xs text-stone-500 leading-relaxed">
+            JobProof is a documentation and record-keeping tool. It does not provide legal advice
+            and makes no guarantees regarding the admissibility or sufficiency of any documentation
+            in legal proceedings. Cryptographic seals verify data integrity but are not a substitute
+            for qualified legal counsel. Users are solely responsible for ensuring their documentation
+            meets applicable legal, regulatory, and contractual requirements. Always consult a
+            licensed attorney before relying on any evidence in court proceedings, lien claims,
+            insurance disputes, or contractual matters. JobProof assumes no liability for outcomes
+            resulting from the use of this tool.
+          </p>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-slate-900 text-stone-500 py-10 px-4 border-t border-slate-800">
         <div className="max-w-6xl mx-auto flex flex-col items-center gap-3">
@@ -328,7 +345,10 @@ export default function Home() {
             <span className="text-white font-bold text-base tracking-tight">JobProof</span>
           </div>
           <p className="text-xs text-stone-500">Protecting construction crews and securing lien claims.</p>
-          <p className="text-xs text-stone-600">&copy; 2026 JobProof</p>
+          <div className="flex items-center gap-4 text-xs text-stone-600">
+            <Link href="/login" className="hover:text-stone-400 transition-colors">Manager Login</Link>
+            <span>&copy; 2026 JobProof</span>
+          </div>
         </div>
       </footer>
     </div>
