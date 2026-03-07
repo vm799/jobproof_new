@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useParams } from 'next/navigation'
-import { ArrowLeftIcon, CheckIcon, MapPinIcon } from '@heroicons/react/20/solid'
+import { ArrowLeftIcon, CheckIcon, MapPinIcon, ShareIcon, ClipboardDocumentCheckIcon } from '@heroicons/react/20/solid'
 import { ensureCsrfToken, csrfHeaders } from '@/lib/csrf-client'
 
 interface Job {
@@ -50,6 +50,26 @@ export default function JobDetailPage() {
   const [sending, setSending] = useState(false)
   const [completing, setCompleting] = useState(false)
   const [message, setMessage] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  const shareOrCopy = useCallback(async (link: string, title: string) => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({ title, text: `Here's your job link for ${title}`, url: link })
+        return
+      } catch {
+        // User cancelled or share failed — fall through to copy
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(link)
+    } catch {
+      // Clipboard API not available
+    }
+    setCopied(true)
+    setMessage('Link copied to clipboard!')
+    setTimeout(() => setCopied(false), 2500)
+  }, [])
 
   useEffect(() => {
     ensureCsrfToken()
@@ -156,14 +176,19 @@ export default function JobDetailPage() {
         {/* Status Timeline */}
         <div className="bg-white rounded-md shadow-sm border border-stone-100 p-5">
           <h3 className="text-xs font-bold text-stone-400 uppercase tracking-wide mb-3">Status</h3>
-          <div className="flex items-center gap-1">
+          <div className="flex items-end gap-1">
             {STATUSES.map((s, i) => {
               const isActive = i <= statusIndex
               const isCurrent = s === job.status
+              // Gradient: stone → amber → emerald as we progress
+              const barColors = ['bg-stone-400', 'bg-amber-400', 'bg-amber-500', 'bg-yellow-500', 'bg-emerald-400', 'bg-emerald-500']
+              const textColors = ['text-stone-600', 'text-amber-700', 'text-amber-700', 'text-yellow-700', 'text-emerald-700', 'text-emerald-700']
+              // Bars rise progressively: 6px → 8px → 10px → 12px → 14px → 16px
+              const heights = ['h-1.5', 'h-2', 'h-2.5', 'h-3', 'h-3.5', 'h-4']
               return (
-                <div key={s} className="flex-1">
-                  <div className={`h-2 rounded-full ${isActive ? 'bg-amber-500' : 'bg-stone-200'} ${isCurrent ? 'ring-2 ring-amber-300' : ''}`}></div>
-                  <p className={`text-[10px] mt-1 text-center ${isActive ? 'text-amber-700 font-bold' : 'text-stone-400'}`}>
+                <div key={s} className="flex-1 flex flex-col items-center">
+                  <div className={`w-full rounded-full transition-all ${isActive ? `${barColors[i]} ${heights[i]}` : 'bg-stone-200 h-1.5'} ${isCurrent ? 'ring-2 ring-offset-1 ring-amber-300' : ''}`}></div>
+                  <p className={`text-[10px] mt-1.5 text-center leading-tight ${isActive ? `${textColors[i]} font-bold` : 'text-stone-400'}`}>
                     {STATUS_LABELS[s]}
                   </p>
                 </div>
@@ -201,10 +226,10 @@ export default function JobDetailPage() {
                 </button>
               )}
               <button
-                onClick={() => { navigator.clipboard.writeText(crewLink); setMessage('Link copied!') }}
-                className="flex-1 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-md font-bold text-sm transition-colors"
+                onClick={() => shareOrCopy(crewLink, job.title)}
+                className={`flex-1 py-3 rounded-md font-bold text-sm transition-all flex items-center justify-center gap-2 ${copied ? 'bg-emerald-600 text-white' : 'bg-slate-900 hover:bg-slate-800 text-white'}`}
               >
-                Copy Link
+                {copied ? <><ClipboardDocumentCheckIcon className="w-4 h-4" /> Copied!</> : <><ShareIcon className="w-4 h-4" /> Share Link</>}
               </button>
             </div>
           </div>
@@ -230,10 +255,10 @@ export default function JobDetailPage() {
                 {sending ? 'Sending...' : 'Resend Email'}
               </button>
               <button
-                onClick={() => { navigator.clipboard.writeText(crewLink); setMessage('Link copied!') }}
-                className="flex-1 bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-md font-bold text-sm transition-colors"
+                onClick={() => shareOrCopy(crewLink, job.title)}
+                className={`flex-1 py-2.5 rounded-md font-bold text-sm transition-all flex items-center justify-center gap-2 ${copied ? 'bg-emerald-600 text-white' : 'bg-slate-900 hover:bg-slate-800 text-white'}`}
               >
-                Copy Link
+                {copied ? <><ClipboardDocumentCheckIcon className="w-4 h-4" /> Copied!</> : <><ShareIcon className="w-4 h-4" /> Share Link</>}
               </button>
             </div>
           </div>
@@ -286,10 +311,10 @@ export default function JobDetailPage() {
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs text-amber-400 font-bold uppercase tracking-wide">Crew Link</p>
               <button
-                onClick={() => { navigator.clipboard.writeText(crewLink); setMessage('Link copied!') }}
-                className="text-xs text-stone-400 hover:text-white transition-colors"
+                onClick={() => shareOrCopy(crewLink, job.title)}
+                className={`text-xs transition-colors flex items-center gap-1 ${copied ? 'text-emerald-400' : 'text-stone-400 hover:text-white'}`}
               >
-                Copy
+                {copied ? <><ClipboardDocumentCheckIcon className="w-3 h-3" /> Copied</> : <><ShareIcon className="w-3 h-3" /> Share</>}
               </button>
             </div>
             <p className="text-stone-300 text-xs font-mono break-all select-all">{crewLink}</p>
