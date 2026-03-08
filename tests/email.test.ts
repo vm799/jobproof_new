@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { welcomeEmail, loginEmail, newJobEmail, jobCompleteEmail } from '@/lib/email'
 
 describe('welcomeEmail', () => {
-  const html = welcomeEmail()
+  const html = welcomeEmail('https://jobproof.pro/auth/verify?token=test123')
 
   it('returns valid HTML document', () => {
     expect(html).toContain('<!DOCTYPE html>')
@@ -33,7 +33,8 @@ describe('welcomeEmail', () => {
   })
 
   it('contains CTA link', () => {
-    expect(html).toContain('Try the Demo')
+    expect(html).toContain('Go to Your Dashboard')
+    expect(html).toContain('https://jobproof.pro/auth/verify?token=test123')
   })
 
   it('contains copyright year', () => {

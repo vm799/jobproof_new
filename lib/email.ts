@@ -36,7 +36,7 @@ function emailShell(title: string, subtitle: string, bodyHtml: string): string {
 </html>`
 }
 
-export function welcomeEmail(): string {
+export function welcomeEmail(loginUrl: string): string {
   return emailShell('Welcome to JobProof', 'Your 14-Day Free Trial', `
     <p style="font-size:16px;color:#f1f5f9;font-weight:600;margin:0 0 8px;">You're in.</p>
     <p style="color:#cbd5e1;font-size:15px;line-height:1.65;margin:0 0 16px;">Your free trial starts today and runs for 14 days &mdash; no credit card needed.</p>
@@ -49,11 +49,10 @@ export function welcomeEmail(): string {
       <tr><td style="padding:10px 0;font-size:14px;color:#94a3b8;"><span style="color:#22c55e;font-weight:700;margin-right:10px;">&#10003;</span> what3words precision location for every job</td></tr>
     </table>
     <p style="text-align:center;margin:28px 0 0;">
-      <a href="${APP_URL}/demo" style="display:inline-block;background:#fbbf24;color:#0f172a;padding:16px 40px;border-radius:8px;text-decoration:none;font-weight:800;font-size:16px;letter-spacing:0.3px;box-shadow:0 4px 14px rgba(251,191,36,0.4);">Try the Demo</a>
+      <a href="${loginUrl}" style="display:inline-block;background:#fbbf24;color:#0f172a;padding:16px 40px;border-radius:8px;text-decoration:none;font-weight:800;font-size:16px;letter-spacing:0.3px;box-shadow:0 4px 14px rgba(251,191,36,0.4);">Go to Your Dashboard</a>
     </p>
-    <p style="text-align:center;margin-top:16px;">
-      <a href="${APP_URL}/login" style="display:inline-block;background:#334155;color:#f1f5f9;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;border:1px solid #475569;">Go to Dashboard</a>
-    </p>
+    <div style="height:1px;background:#334155;margin:24px 0;"></div>
+    <p style="font-size:13px;color:#64748b;text-align:center;">This link expires in 15 minutes. You can always request a new one at <a href="${APP_URL}/login" style="color:#fbbf24;text-decoration:none;">jobproof.pro/login</a></p>
   `)
 }
 

@@ -61,14 +61,14 @@ export default function Home() {
             <a href="#features" className="text-stone-400 hover:text-white text-sm transition-colors">Features</a>
             <a href="#pricing" className="text-stone-400 hover:text-white text-sm transition-colors">Pricing</a>
             <a href="#faq" className="text-stone-400 hover:text-white text-sm transition-colors">FAQ</a>
-            <Link href="/login" className="text-stone-400 hover:text-white text-sm transition-colors">Manager Login</Link>
-            <Link href="/demo" className="bg-amber-500 hover:bg-amber-600 text-slate-900 px-4 py-2 rounded-md text-sm font-bold transition-colors">
-              Try Demo
+            <Link href="/login" className="text-stone-400 hover:text-white text-sm transition-colors">Log In</Link>
+            <Link href="/login" className="bg-amber-500 hover:bg-amber-600 text-slate-900 px-4 py-2 rounded-md text-sm font-bold transition-colors">
+              Start Free Trial
             </Link>
           </div>
           <div className="sm:hidden flex items-center gap-2">
-            <Link href="/demo" className="bg-amber-500 hover:bg-amber-600 text-slate-900 px-4 py-2 rounded-md text-sm font-bold transition-colors">
-              Try Demo
+            <Link href="/login" className="bg-amber-500 hover:bg-amber-600 text-slate-900 px-4 py-2 rounded-md text-sm font-bold transition-colors">
+              Start Trial
             </Link>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -96,7 +96,7 @@ export default function Home() {
             <a href="#features" onClick={() => setMobileMenuOpen(false)} className="text-stone-300 hover:text-white text-sm py-2 transition-colors">Features</a>
             <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="text-stone-300 hover:text-white text-sm py-2 transition-colors">Pricing</a>
             <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="text-stone-300 hover:text-white text-sm py-2 transition-colors">FAQ</a>
-            <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="text-stone-300 hover:text-white text-sm py-2 transition-colors">Manager Login</Link>
+            <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="text-stone-300 hover:text-white text-sm py-2 transition-colors">Log In</Link>
           </div>
         </div>
       )}
@@ -116,8 +116,8 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10">
-            <Link href="/demo" className="bg-amber-500 hover:bg-amber-600 text-slate-900 px-8 py-4 rounded-md flex items-center justify-center gap-2 text-lg font-bold transition-colors">
-              Try Free Demo
+            <Link href="/login" className="bg-amber-500 hover:bg-amber-600 text-slate-900 px-8 py-4 rounded-md flex items-center justify-center gap-2 text-lg font-bold transition-colors">
+              Start Your 14-Day Trial
               <ArrowRightIcon className="w-5 h-5" />
             </Link>
             <button onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} className="border-2 border-stone-600 text-stone-300 px-8 py-4 rounded-md text-lg font-medium hover:border-stone-400 hover:text-white transition-colors">
@@ -125,7 +125,7 @@ export default function Home() {
             </button>
           </div>
 
-          <p className="text-stone-500 text-sm">No credit card required. Try the demo right now.</p>
+          <p className="text-stone-500 text-sm">No credit card required. Set up in 60 seconds.</p>
         </div>
       </section>
 
@@ -396,20 +396,13 @@ export default function Home() {
             href="/login"
             className="flex-1 flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white py-3.5 rounded-md font-bold text-sm transition-colors"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-            </svg>
-            Manager
+            Log In
           </Link>
           <Link
-            href="/demo"
+            href="/login"
             className="flex-1 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-900 py-3.5 rounded-md font-bold text-sm transition-colors"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
-            </svg>
-            Crew
+            Start Free Trial
           </Link>
         </div>
       </div>
