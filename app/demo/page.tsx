@@ -81,7 +81,7 @@ export default function Demo() {
       const entries = await getOutboxPending()
       for (const entry of entries) {
         try {
-          const res = await fetch('/api/send-report', {
+          const res = await fetch('/api/demo/send-report', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: entry.email, html: entry.html, jobId: entry.jobId })
@@ -219,7 +219,7 @@ export default function Demo() {
     }
 
     try {
-      const res = await fetch('/api/send-report', {
+      const res = await fetch('/api/demo/send-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: emailAddress, html, jobId })

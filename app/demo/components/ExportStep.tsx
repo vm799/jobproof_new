@@ -37,7 +37,7 @@ export default function ExportStep({
 
       <div className="bg-white border border-stone-200 rounded-md p-5 shadow-sm space-y-3">
         <h3 className="font-bold text-slate-900 text-sm">Email Report</h3>
-        <p className="text-xs text-stone-500">Send to your client, attorney, or insurer.</p>
+        <p className="text-xs text-stone-500">Send to your client, lawyer, or insurer.</p>
 
         {emailSent ? (
           <div className="bg-emerald-50 border border-emerald-200 rounded-md p-3 text-center">

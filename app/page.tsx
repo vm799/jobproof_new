@@ -366,7 +366,7 @@ export default function Home() {
             in legal proceedings. Cryptographic seals verify data integrity but are not a substitute
             for qualified legal counsel. Users are solely responsible for ensuring their documentation
             meets applicable legal, regulatory, and contractual requirements. Always consult a
-            licensed attorney before relying on any evidence in court proceedings, lien claims,
+            licensed lawyer before relying on any evidence in court proceedings, lien claims,
             insurance disputes, or contractual matters. JobProof assumes no liability for outcomes
             resulting from the use of this tool.
           </p>
