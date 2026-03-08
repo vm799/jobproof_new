@@ -30,18 +30,23 @@ describe('getAuthCookie', () => {
     vi.clearAllMocks()
   })
 
-  it('returns cookie value when present', () => {
-    mockCookies.get.mockReturnValue({ value: 'mgr-123' })
-    const result = getAuthCookie()
-    expect(result).toBe('mgr-123')
-    expect(mockCookies.get).toHaveBeenCalledWith(COOKIE_NAME)
-  })
-
   it('returns undefined when cookie is missing', () => {
     mockCookies.get.mockReturnValue(undefined)
     const result = getAuthCookie()
     expect(result).toBeUndefined()
     expect(mockCookies.get).toHaveBeenCalledWith(COOKIE_NAME)
+  })
+
+  it('accepts a raw UUID for backward compatibility', () => {
+    mockCookies.get.mockReturnValue({ value: '550e8400-e29b-41d4-a716-446655440000' })
+    const result = getAuthCookie()
+    expect(result).toBe('550e8400-e29b-41d4-a716-446655440000')
+  })
+
+  it('rejects garbage values', () => {
+    mockCookies.get.mockReturnValue({ value: 'not-a-uuid-or-signed' })
+    const result = getAuthCookie()
+    expect(result).toBeUndefined()
   })
 })
 
@@ -50,33 +55,25 @@ describe('setAuthCookie', () => {
     vi.clearAllMocks()
   })
 
-  it('sets cookie with correct options', async () => {
+  it('sets a signed cookie value', async () => {
     await setAuthCookie('mgr-456')
-    expect(mockCookies.set).toHaveBeenCalledWith(COOKIE_NAME, 'mgr-456', {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: COOKIE_MAX_AGE_SECONDS,
-      path: '/',
-    })
-  })
-
-  it('sets httpOnly to true', async () => {
-    await setAuthCookie('mgr-789')
-    const options = mockCookies.set.mock.calls[0][2]
+    expect(mockCookies.set).toHaveBeenCalledTimes(1)
+    const [name, value, options] = mockCookies.set.mock.calls[0]
+    expect(name).toBe(COOKIE_NAME)
+    // Value should be signed: "mgr-456.<signature>"
+    expect(value).toMatch(/^mgr-456\..+$/)
     expect(options.httpOnly).toBe(true)
-  })
-
-  it('sets sameSite to lax', async () => {
-    await setAuthCookie('mgr-789')
-    const options = mockCookies.set.mock.calls[0][2]
     expect(options.sameSite).toBe('lax')
+    expect(options.maxAge).toBe(COOKIE_MAX_AGE_SECONDS)
+    expect(options.path).toBe('/')
   })
 
-  it('sets maxAge from constants', async () => {
-    await setAuthCookie('mgr-789')
-    const options = mockCookies.set.mock.calls[0][2]
-    expect(options.maxAge).toBe(COOKIE_MAX_AGE_SECONDS)
+  it('round-trips: setAuthCookie value can be read by getAuthCookie', async () => {
+    await setAuthCookie('test-id-123')
+    const signedValue = mockCookies.set.mock.calls[0][1]
+    mockCookies.get.mockReturnValue({ value: signedValue })
+    const result = getAuthCookie()
+    expect(result).toBe('test-id-123')
   })
 })
 
@@ -102,8 +99,8 @@ describe('getAuthenticatedManager', () => {
     expect(result).toBeNull()
   })
 
-  it('returns manager data when cookie is set', async () => {
-    mockCookies.get.mockReturnValue({ value: 'mgr-1' })
+  it('returns manager data when cookie is valid UUID', async () => {
+    mockCookies.get.mockReturnValue({ value: '550e8400-e29b-41d4-a716-446655440000' })
     const result = await getAuthenticatedManager()
     expect(result).toEqual({ id: 'mgr-1', email: 'test@test.com' })
   })

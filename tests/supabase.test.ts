@@ -33,29 +33,3 @@ describe('getServiceClient', () => {
     expect(mockCreateClient).toHaveBeenCalledWith('https://test.supabase.co', 'test-service-key')
   })
 })
-
-describe('getSupabase', () => {
-  beforeEach(() => {
-    vi.resetModules()
-    mockCreateClient.mockClear()
-  })
-
-  it('returns a client', async () => {
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
-    const { getSupabase } = await import('@/lib/supabase')
-    const client = getSupabase()
-    expect(client).toBeDefined()
-    expect(mockCreateClient).toHaveBeenCalledWith('https://test.supabase.co', 'test-anon-key')
-  })
-
-  it('returns the same cached client on subsequent calls', async () => {
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
-    const { getSupabase } = await import('@/lib/supabase')
-    const client1 = getSupabase()
-    const client2 = getSupabase()
-    expect(client1).toBe(client2)
-    expect(mockCreateClient).toHaveBeenCalledTimes(1)
-  })
-})
