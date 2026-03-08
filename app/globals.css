@@ -25,6 +25,8 @@ body {
   overscroll-behavior-x: none;
   width: 100%;
   max-width: 100vw;
+  min-height: 100%;
+  min-height: 100dvh;
 }
 
 /* Prevent media from causing horizontal overflow */
@@ -36,11 +38,6 @@ img, video, canvas, iframe, svg {
 a {
   color: inherit;
   text-decoration: none;
-}
-
-body {
-  min-height: 100%;
-  min-height: 100dvh;
 }
 
 /* Monospace utility */
