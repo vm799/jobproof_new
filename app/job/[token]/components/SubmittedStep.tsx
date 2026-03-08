@@ -35,7 +35,7 @@ export default function SubmittedStep({ evidence, token, jobTitle, submittedOnli
       const sync = async () => {
         try {
           const seal = generateSeal(evidence)
-          await fetch(`/api/crew/${token}/evidence`, {
+          const res = await fetch(`/api/crew/${token}/submit-evidence`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -49,7 +49,7 @@ export default function SubmittedStep({ evidence, token, jobTitle, submittedOnli
               seal,
             })
           })
-          await fetch(`/api/crew/${token}/submit`, { method: 'POST' })
+          if (!res.ok) throw new Error('Sync failed')
           // Clean up IndexedDB
           try { await deleteJob(`pending-${token}`) } catch {}
           setPendingSync(false)
@@ -101,7 +101,7 @@ ${evidence.signature ? `<div class="section"><div class="section-title">Client S
     setSendingReport(true)
     try {
       const seal = generateSeal(evidence)
-      await fetch(`/api/crew/${token}/evidence`, {
+      const res = await fetch(`/api/crew/${token}/submit-evidence`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -115,7 +115,7 @@ ${evidence.signature ? `<div class="section"><div class="section-title">Client S
           seal,
         })
       })
-      await fetch(`/api/crew/${token}/submit`, { method: 'POST' })
+      if (!res.ok) throw new Error('Send failed')
       // Clean up IndexedDB
       try { await deleteJob(`pending-${token}`) } catch {}
       setReportSent(true)

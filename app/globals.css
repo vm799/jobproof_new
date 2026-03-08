@@ -54,12 +54,12 @@ body {
   color: #18181b;
 }
 
-/* PWA specific */
+/* PWA safe areas — bottom is handled per-component (sticky bars, footers)
+   to avoid double padding on notched devices */
 @supports (padding: max(0px)) {
   body {
     padding-left: max(0px, env(safe-area-inset-left));
     padding-right: max(0px, env(safe-area-inset-right));
     padding-top: max(0px, env(safe-area-inset-top));
-    padding-bottom: max(0px, env(safe-area-inset-bottom));
   }
 }

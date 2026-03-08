@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -39,6 +39,7 @@ export default function DashboardPage() {
   const [form, setForm] = useState({ title: '', address: '', instructions: '', crewName: '', crewEmail: '' })
   const [error, setError] = useState('')
   const [trial, setTrial] = useState<{ expired: boolean; daysLeft: number } | null>(null)
+  const modalRef = useRef<HTMLDivElement>(null)
 
   const loadJobs = useCallback(async () => {
     try {
@@ -61,6 +62,32 @@ export default function DashboardPage() {
     loadJobs()
     fetch('/api/trial').then(r => r.json()).then(setTrial).catch(() => {})
   }, [loadJobs])
+
+  // Focus trap + escape key for modal
+  useEffect(() => {
+    if (!showCreate) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setShowCreate(false); return }
+      if (e.key !== 'Tab' || !modalRef.current) return
+      const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+        'input, textarea, button, [tabindex]:not([tabindex="-1"])'
+      )
+      if (focusable.length === 0) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault(); last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault(); first.focus()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    // Auto-focus first input
+    const timer = setTimeout(() => {
+      modalRef.current?.querySelector<HTMLElement>('input')?.focus()
+    }, 50)
+    return () => { document.removeEventListener('keydown', handleKeyDown); clearTimeout(timer) }
+  }, [showCreate])
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -142,9 +169,8 @@ export default function DashboardPage() {
           <div
             className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
             onClick={(e) => { if (e.target === e.currentTarget) setShowCreate(false) }}
-            onKeyDown={(e) => { if (e.key === 'Escape') setShowCreate(false) }}
           >
-            <div className="bg-white rounded-md shadow-xl w-full max-w-md p-6">
+            <div ref={modalRef} role="dialog" aria-modal="true" aria-label="Create New Job" className="bg-white rounded-md shadow-xl w-full max-w-md p-6">
               <h2 className="text-lg font-bold text-slate-900 mb-4">Create New Job</h2>
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-md text-sm mb-3">{error}</div>

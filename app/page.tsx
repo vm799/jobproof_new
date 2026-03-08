@@ -23,6 +23,7 @@ export default function Home() {
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [subscribeError, setSubscribeError] = useState('')
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -65,11 +66,40 @@ export default function Home() {
               Try Demo
             </Link>
           </div>
-          <Link href="/demo" className="sm:hidden bg-amber-500 hover:bg-amber-600 text-slate-900 px-4 py-2 rounded-md text-sm font-bold transition-colors">
-            Try Demo
-          </Link>
+          <div className="sm:hidden flex items-center gap-2">
+            <Link href="/demo" className="bg-amber-500 hover:bg-amber-600 text-slate-900 px-4 py-2 rounded-md text-sm font-bold transition-colors">
+              Try Demo
+            </Link>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="text-stone-400 hover:text-white p-2 transition-colors"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
       </nav>
+
+      {/* Mobile menu */}
+      {mobileMenuOpen && (
+        <div className="fixed top-[57px] left-0 right-0 bg-slate-900/95 backdrop-blur-sm border-b border-slate-700 z-40 sm:hidden">
+          <div className="flex flex-col px-4 py-3 gap-3">
+            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="text-stone-300 hover:text-white text-sm py-2 transition-colors">Features</a>
+            <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="text-stone-300 hover:text-white text-sm py-2 transition-colors">Pricing</a>
+            <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="text-stone-300 hover:text-white text-sm py-2 transition-colors">FAQ</a>
+            <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="text-stone-300 hover:text-white text-sm py-2 transition-colors">Manager Login</Link>
+          </div>
+        </div>
+      )}
 
       {/* Hero */}
       <section className="pt-28 pb-16 px-4 bg-slate-900">

@@ -52,6 +52,7 @@ export default function CrewJobPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submittedOnline, setSubmittedOnline] = useState(false)
   const [stream, setStream] = useState<MediaStream | null>(null)
+  const [cameraError, setCameraError] = useState('')
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -135,11 +136,12 @@ export default function CrewJobPage() {
 
   const startCamera = async (type: 'before' | 'after') => {
     try {
+      setCameraError('')
       const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
       setStream(mediaStream)
       setStep(type === 'before' ? 'photo-before' : 'photo-after')
     } catch {
-      alert('Camera access denied. Use file upload instead.')
+      setCameraError('Camera access denied. Tap "Upload Photo Instead" below.')
     }
   }
 
@@ -268,7 +270,7 @@ export default function CrewJobPage() {
 
     try {
       if (isOnline) {
-        const evidenceRes = await fetch(`/api/crew/${token}/evidence`, {
+        const res = await fetch(`/api/crew/${token}/submit-evidence`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -282,9 +284,7 @@ export default function CrewJobPage() {
             seal,
           })
         })
-        if (!evidenceRes.ok) throw new Error('Evidence upload failed')
-        const submitRes = await fetch(`/api/crew/${token}/submit`, { method: 'POST' })
-        if (!submitRes.ok) throw new Error('Submit failed')
+        if (!res.ok) throw new Error('Submission failed')
         didSubmitOnline = true
         // Clean up any pending IndexedDB entry
         try { await deleteJob(`pending-${token}`) } catch {}
@@ -392,6 +392,7 @@ export default function CrewJobPage() {
             stream={stream}
             videoRef={videoRef}
             fileInputRef={fileInputRef}
+            cameraError={cameraError}
             onStartCamera={startCamera}
             onCapturePhoto={capturePhoto}
             onFileUploadClick={() => fileInputRef.current?.click()}
@@ -405,6 +406,7 @@ export default function CrewJobPage() {
             videoRef={videoRef}
             fileInputRef={fileInputRef}
             beforePhoto={evidence.beforePhoto}
+            cameraError={cameraError}
             onStartCamera={startCamera}
             onCapturePhoto={capturePhoto}
             onFileUploadClick={() => fileInputRef.current?.click()}

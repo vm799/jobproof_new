@@ -32,13 +32,13 @@ interface Job {
 }
 
 const STATUSES = ['created', 'sent', 'accepted', 'in_progress', 'submitted', 'completed']
-const STATUS_LABELS: Record<string, string> = {
-  created: 'Created',
-  sent: 'Sent to Crew',
-  accepted: 'Accepted',
-  in_progress: 'In Progress',
-  submitted: 'Evidence Submitted',
-  completed: 'Completed',
+const STATUS_LABELS: Record<string, { full: string; short: string }> = {
+  created: { full: 'Created', short: 'New' },
+  sent: { full: 'Sent to Crew', short: 'Sent' },
+  accepted: { full: 'Accepted', short: 'OK' },
+  in_progress: { full: 'In Progress', short: 'WIP' },
+  submitted: { full: 'Evidence Submitted', short: 'Done' },
+  completed: { full: 'Completed', short: 'Closed' },
 }
 
 export default function JobDetailPage() {
@@ -52,6 +52,7 @@ export default function JobDetailPage() {
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState<'success' | 'error'>('success')
   const [copied, setCopied] = useState(false)
+  const [confirmComplete, setConfirmComplete] = useState(false)
 
   const shareOrCopy = useCallback(async (link: string, title: string) => {
     if (typeof navigator !== 'undefined' && navigator.share) {
@@ -193,8 +194,9 @@ export default function JobDetailPage() {
               return (
                 <div key={s} className="flex-1 flex flex-col items-center">
                   <div className={`w-full rounded-full transition-all ${isActive ? `${barColors[i]} ${heights[i]}` : 'bg-stone-200 h-1.5'} ${isCurrent ? 'ring-2 ring-offset-1 ring-amber-300' : ''}`}></div>
-                  <p className={`text-[10px] mt-1.5 text-center leading-tight ${isActive ? `${textColors[i]} font-bold` : 'text-stone-400'}`}>
-                    {STATUS_LABELS[s]}
+                  <p className={`text-[10px] sm:text-xs mt-1.5 text-center leading-tight ${isActive ? `${textColors[i]} font-bold` : 'text-stone-400'}`}>
+                    <span className="sm:hidden">{STATUS_LABELS[s]?.short}</span>
+                    <span className="hidden sm:inline">{STATUS_LABELS[s]?.full}</span>
                   </p>
                 </div>
               )
@@ -290,13 +292,33 @@ export default function JobDetailPage() {
                 <p className="text-stone-600 text-xs mt-0.5">Review the photos, GPS, signature, and seal below, then mark complete.</p>
               </div>
             </div>
-            <button
-              onClick={markComplete}
-              disabled={completing}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-md font-bold text-sm disabled:opacity-50 transition-colors"
-            >
-              {completing ? 'Completing...' : 'Mark Complete'}
-            </button>
+            {confirmComplete ? (
+              <div className="bg-white border border-emerald-200 rounded-md p-3 space-y-2">
+                <p className="text-slate-900 text-sm font-medium">Are you sure? This action cannot be undone.</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setConfirmComplete(false)}
+                    className="flex-1 border border-stone-300 py-2 rounded-md text-sm font-medium text-stone-600 hover:border-stone-400 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => { markComplete(); setConfirmComplete(false) }}
+                    disabled={completing}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-md font-bold text-sm disabled:opacity-50 transition-colors"
+                  >
+                    {completing ? 'Completing...' : 'Confirm'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmComplete(true)}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-md font-bold text-sm transition-colors"
+              >
+                Mark Complete
+              </button>
+            )}
           </div>
         )}
 
