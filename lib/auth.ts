@@ -1,9 +1,36 @@
 import { cookies } from 'next/headers'
+import crypto from 'crypto'
 import { getServiceClient } from './supabase'
 import { COOKIE_NAME, COOKIE_MAX_AGE_SECONDS } from '@/lib/constants'
 
+const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-secret-change-in-production'
+
+/** Sign a value with HMAC-SHA256 */
+function sign(value: string): string {
+  const signature = crypto
+    .createHmac('sha256', SESSION_SECRET)
+    .update(value)
+    .digest('base64url')
+  return `${value}.${signature}`
+}
+
+/** Verify and extract a signed value. Returns null if tampered. */
+function unsign(signed: string): string | null {
+  const lastDot = signed.lastIndexOf('.')
+  if (lastDot === -1) return null
+  const value = signed.slice(0, lastDot)
+  const expected = sign(value)
+  // Timing-safe comparison
+  if (expected.length !== signed.length) return null
+  const a = Buffer.from(expected)
+  const b = Buffer.from(signed)
+  if (!crypto.timingSafeEqual(a, b)) return null
+  return value
+}
+
 export async function setAuthCookie(managerId: string) {
-  cookies().set(COOKIE_NAME, managerId, {
+  const signedValue = sign(managerId)
+  cookies().set(COOKIE_NAME, signedValue, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -13,7 +40,15 @@ export async function setAuthCookie(managerId: string) {
 }
 
 export function getAuthCookie(): string | undefined {
-  return cookies().get(COOKIE_NAME)?.value
+  const raw = cookies().get(COOKIE_NAME)?.value
+  if (!raw) return undefined
+  // Try signed format first
+  const unsigned = unsign(raw)
+  if (unsigned) return unsigned
+  // Fallback: accept raw UUID during migration (existing sessions)
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (UUID_RE.test(raw)) return raw
+  return undefined
 }
 
 export function clearAuthCookie() {

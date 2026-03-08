@@ -9,6 +9,7 @@ interface PhotoCaptureStepProps {
   videoRef: RefObject<HTMLVideoElement>
   fileInputRef: RefObject<HTMLInputElement>
   beforePhoto?: string
+  cameraError?: string
   onStartCamera: (type: 'before' | 'after') => void
   onCapturePhoto: (type: 'before' | 'after') => void
   onFileUploadClick: () => void
@@ -19,6 +20,7 @@ export default function PhotoCaptureStep({
   stream,
   videoRef,
   beforePhoto,
+  cameraError,
   onStartCamera,
   onCapturePhoto,
   onFileUploadClick,
@@ -39,10 +41,15 @@ export default function PhotoCaptureStep({
       )}
       {!stream && (
         <div className="space-y-3">
+          {cameraError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-md text-sm">
+              {cameraError}
+            </div>
+          )}
           <button onClick={() => onStartCamera(type)} className="w-full bg-slate-900 text-white py-4 rounded-md font-bold text-lg flex items-center justify-center gap-3 hover:bg-slate-800 transition-colors">
             <CameraIcon className="w-6 h-6" /> Open Camera
           </button>
-          <button onClick={onFileUploadClick} className="w-full border-2 border-stone-300 text-stone-600 py-3 rounded-md font-medium hover:border-stone-400 transition-colors">
+          <button onClick={onFileUploadClick} className={`w-full border-2 py-3 rounded-md font-medium transition-colors ${cameraError ? 'border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100' : 'border-stone-300 text-stone-600 hover:border-stone-400'}`}>
             Upload Photo Instead
           </button>
         </div>

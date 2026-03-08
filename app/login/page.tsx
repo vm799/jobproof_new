@@ -27,11 +27,6 @@ export default function LoginPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to send')
-      // In demo mode (no RESEND_API_KEY), auto-redirect to the magic link
-      if (data.demoUrl) {
-        window.location.href = data.demoUrl
-        return
-      }
       setSent(true)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Try again.')
@@ -61,7 +56,13 @@ export default function LoginPage() {
               </div>
               <h2 className="text-lg font-bold text-slate-900">Check your email</h2>
               <p className="text-stone-500 text-sm">We sent a login link to <strong className="text-slate-900">{email}</strong></p>
-              <p className="text-stone-400 text-xs">The link expires in 15 minutes.</p>
+              <p className="text-stone-400 text-xs">The link expires in 15 minutes. Check your spam/junk folder if you don&apos;t see it.</p>
+              <button
+                onClick={() => { setSent(false); setError('') }}
+                className="text-amber-600 hover:text-amber-700 text-xs font-bold transition-colors"
+              >
+                Didn&apos;t receive it? Try again
+              </button>
             </div>
           ) : (
             <>
