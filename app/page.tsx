@@ -107,13 +107,20 @@ export default function Home() {
           <div className="flex justify-center mb-6">
             <Logo size={72} />
           </div>
-          <p className="text-amber-400 text-sm font-bold uppercase tracking-widest mb-4">Offline-First Field Evidence</p>
+          <p className="text-amber-400 text-sm font-bold uppercase tracking-widest mb-4">Offline-First Field Documentation</p>
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
-            Never Lose a<br />Lien Claim Again
+            Tamper-Proof Records.<br />Any Job. Any Field.
           </h1>
-          <p className="text-lg text-stone-400 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Cryptographically sealed before/after photos with GPS timestamps. Works completely offline. Proof that holds up in court.
+          <p className="text-lg text-stone-400 mb-6 max-w-2xl mx-auto leading-relaxed">
+            GPS-stamped, cryptographically sealed photo evidence that works completely offline. Built for construction, inventory, emergency services, and any team that needs proof of what happened — and when.
           </p>
+          <div className="flex flex-wrap justify-center gap-2 mb-10">
+            {['Construction', 'Inventory Check-Ins', 'Emergency Services', 'Service & Maintenance'].map((tag) => (
+              <span key={tag} className="bg-slate-800 text-stone-300 text-xs font-medium px-3 py-1 rounded-full border border-slate-700">
+                {tag}
+              </span>
+            ))}
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10">
             <Link href="/login" className="bg-amber-500 hover:bg-amber-600 text-slate-900 px-8 py-4 rounded-md flex items-center justify-center gap-2 text-lg font-bold transition-colors">
@@ -138,15 +145,15 @@ export default function Home() {
             {[
               {
                 title: 'Lost Evidence',
-                desc: 'Photos deleted, forgotten, or gone with the crew member. No proof of what was actually done.'
+                desc: 'Photos deleted, forgotten, or gone with the team member. No proof of what was actually done on site.'
               },
               {
-                title: 'Disputed Work',
-                desc: "Client says it wasn't complete or claims they already paid to fix it. No documented proof."
+                title: 'Disputed Records',
+                desc: "Someone says it wasn't done, delivered, or inspected. Without documented proof, it's your word against theirs."
               },
               {
-                title: 'Lien Claims Denied',
-                desc: 'Without timestamped, location-verified photos, your lien claim gets rejected. £50k+ loss.'
+                title: 'Claims Denied',
+                desc: 'Without timestamped, location-verified evidence, insurance claims, lien filings, and compliance audits fall apart.'
               }
             ].map((item, i) => (
               <div key={i} className="bg-white rounded-md shadow-sm p-6 border-l-4 border-red-500">
@@ -380,7 +387,7 @@ export default function Home() {
             <Logo size={28} />
             <span className="text-white font-bold text-base tracking-tight">JobProof</span>
           </div>
-          <p className="text-xs text-stone-500">Protecting construction crews and securing lien claims.</p>
+          <p className="text-xs text-stone-500">Tamper-proof field documentation for every industry.</p>
           <div className="flex items-center gap-4 text-xs text-stone-600">
             <Link href="/login" className="hover:text-stone-400 transition-colors">Manager Login</Link>
             <Link href="/demo" className="hover:text-stone-400 transition-colors">Crew Demo</Link>
