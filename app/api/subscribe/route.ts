@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { getServiceClient } from '@/lib/supabase'
 import { subscribeSchema } from '@/lib/validation'
 import { rateLimit } from '@/lib/rate-limit'
 import { welcomeEmail } from '@/lib/email'
+import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,10 +22,47 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    const { email } = parsed.data
+    const email = parsed.data.email.toLowerCase().trim()
+
+    const supabase = getServiceClient()
+
+    // Find or create manager account
+    let { data: manager } = await supabase
+      .from('managers')
+      .select('id')
+      .eq('email', email)
+      .single()
+
+    if (!manager) {
+      const { data: newManager, error: createError } = await supabase
+        .from('managers')
+        .insert({ email })
+        .select('id')
+        .single()
+
+      if (createError || !newManager) {
+        console.error('Manager create error:', createError)
+        return NextResponse.json({ error: 'Failed to create account' }, { status: 500 })
+      }
+      manager = newManager
+    }
+
+    // Generate auth token for magic link
+    const token = crypto.randomBytes(32).toString('hex')
+    const { error: tokenError } = await supabase
+      .from('auth_tokens')
+      .insert({ email, token })
+
+    if (tokenError) {
+      console.error('Token insert error:', tokenError)
+      return NextResponse.json({ error: 'Failed to create login link' }, { status: 500 })
+    }
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jobproof.pro'
+    const loginUrl = `${appUrl}/auth/verify?token=${token}`
 
     if (!process.env.RESEND_API_KEY) {
-      console.log('Demo mode: Sign-up received (Resend not configured):', email)
+      console.log('Demo mode: Welcome magic link:', loginUrl)
       return NextResponse.json(
         { success: true, message: 'Sign-up captured (demo mode)' },
         { status: 200 }
@@ -37,7 +76,7 @@ export async function POST(request: NextRequest) {
       from: fromAddress,
       to: email,
       subject: 'Welcome to JobProof — Your 14-Day Trial Starts Now',
-      html: welcomeEmail()
+      html: welcomeEmail(loginUrl)
     })
 
     if (error) {

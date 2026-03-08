@@ -55,8 +55,8 @@ export default function LoginPage() {
                 </svg>
               </div>
               <h2 className="text-lg font-bold text-slate-900">Check your email</h2>
-              <p className="text-stone-500 text-sm">We sent a login link to <strong className="text-slate-900">{email}</strong></p>
-              <p className="text-stone-400 text-xs">The link expires in 15 minutes. Check your spam/junk folder if you don&apos;t see it.</p>
+              <p className="text-stone-500 text-sm">We sent a secure link to <strong className="text-slate-900">{email}</strong></p>
+              <p className="text-stone-400 text-xs">Click the link to go straight to your dashboard. Expires in 15 minutes. Check spam/junk if needed.</p>
               <button
                 onClick={() => { setSent(false); setError('') }}
                 className="text-amber-600 hover:text-amber-700 text-xs font-bold transition-colors"
@@ -66,8 +66,8 @@ export default function LoginPage() {
             </div>
           ) : (
             <>
-              <h2 className="text-lg font-bold text-slate-900 mb-1">Log in</h2>
-              <p className="text-stone-500 text-sm mb-5">Enter your email to receive a login link.</p>
+              <h2 className="text-lg font-bold text-slate-900 mb-1">Log in or start your trial</h2>
+              <p className="text-stone-500 text-sm mb-5">Enter your email and we&apos;ll send a secure link. New here? Your 14-day free trial starts instantly.</p>
 
               <form onSubmit={handleSubmit} className="space-y-3">
                 <input
@@ -92,7 +92,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-stone-500 text-xs mt-6">
-          No account? We&apos;ll create one when you log in.
+          No credit card required. 14-day free trial.
         </p>
       </div>
     </div>

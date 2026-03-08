@@ -39,6 +39,11 @@ export async function setAuthCookie(managerId: string) {
   })
 }
 
+/** Create a signed cookie value without setting it (for use on redirect responses) */
+export function createSignedCookieValue(managerId: string): string {
+  return sign(managerId)
+}
+
 export function getAuthCookie(): string | undefined {
   const raw = cookies().get(COOKIE_NAME)?.value
   if (!raw) return undefined

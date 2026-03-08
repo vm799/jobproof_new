@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
-import { setAuthCookie } from '@/lib/auth'
+import { createSignedCookieValue } from '@/lib/auth'
+import { COOKIE_NAME, COOKIE_MAX_AGE_SECONDS } from '@/lib/constants'
 import { rateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
@@ -64,8 +65,15 @@ export async function GET(request: NextRequest) {
     manager = newManager
   }
 
-  // Set auth cookie
-  await setAuthCookie(manager.id)
+  // Set auth cookie directly on the redirect response for reliability
+  const response = NextResponse.redirect(new URL('/dashboard', request.url))
+  response.cookies.set(COOKIE_NAME, createSignedCookieValue(manager.id), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: COOKIE_MAX_AGE_SECONDS,
+    path: '/',
+  })
 
-  return NextResponse.redirect(new URL('/dashboard', request.url))
+  return response
 }
