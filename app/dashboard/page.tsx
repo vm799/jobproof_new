@@ -139,9 +139,16 @@ export default function DashboardPage() {
 
         {/* Create Job Modal */}
         {showCreate && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowCreate(false) }}
+            onKeyDown={(e) => { if (e.key === 'Escape') setShowCreate(false) }}
+          >
             <div className="bg-white rounded-md shadow-xl w-full max-w-md p-6">
               <h2 className="text-lg font-bold text-slate-900 mb-4">Create New Job</h2>
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-md text-sm mb-3">{error}</div>
+              )}
               <form onSubmit={handleCreate} className="space-y-3">
                 <div>
                   <label className="text-xs font-bold text-stone-500 uppercase tracking-wide">Job Title *</label>

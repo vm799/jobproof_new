@@ -37,9 +37,10 @@ export default function Home() {
         setSubmitted(true)
         setEmail('')
         setSubscribeError('')
+      } else {
+        setSubscribeError('Something went wrong. Please try again.')
       }
-    } catch (err) {
-      console.error(err)
+    } catch {
       setSubscribeError('Something went wrong. Please try again.')
     } finally {
       setLoading(false)
@@ -89,7 +90,7 @@ export default function Home() {
               Try Free Demo
               <ArrowRightIcon className="w-5 h-5" />
             </Link>
-            <button onClick={() => document.getElementById('email-form')?.scrollIntoView({ behavior: 'smooth' })} className="border-2 border-stone-600 text-stone-300 px-8 py-4 rounded-md text-lg font-medium hover:border-stone-400 hover:text-white transition-colors">
+            <button onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} className="border-2 border-stone-600 text-stone-300 px-8 py-4 rounded-md text-lg font-medium hover:border-stone-400 hover:text-white transition-colors">
               See How It Works
             </button>
           </div>
@@ -241,9 +242,9 @@ export default function Home() {
                       </li>
                     ))}
                   </ul>
-                  <button className={`w-full py-2.5 rounded-md font-bold text-sm transition-colors ${plan.highlight ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-slate-900 hover:bg-slate-800 text-white'}`}>
+                  <Link href="/login" className={`block w-full py-2.5 rounded-md font-bold text-sm text-center transition-colors ${plan.highlight ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-slate-900 hover:bg-slate-800 text-white'}`}>
                     Get Started
-                  </button>
+                  </Link>
                 </div>
               </div>
             ))}

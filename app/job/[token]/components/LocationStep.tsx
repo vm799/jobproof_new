@@ -8,6 +8,7 @@ interface LocationStepProps {
   latitude?: number
   longitude?: number
   w3w?: string
+  gettingLocation?: boolean
   onGetLocation: () => void
   onContinue: () => void
 }
@@ -18,6 +19,7 @@ export default function LocationStep({
   latitude,
   longitude,
   w3w,
+  gettingLocation,
   onGetLocation,
   onContinue,
 }: LocationStepProps) {
@@ -36,8 +38,17 @@ export default function LocationStep({
           </div>
         </div>
       )}
-      <button onClick={onGetLocation} className="w-full bg-slate-900 text-white py-4 rounded-md font-bold flex items-center justify-center gap-3 hover:bg-slate-800 transition-colors">
-        <MapPinIcon className="w-5 h-5" /> Get My GPS Location
+      <button onClick={onGetLocation} disabled={gettingLocation} className="w-full bg-slate-900 text-white py-4 rounded-md font-bold flex items-center justify-center gap-3 hover:bg-slate-800 transition-colors disabled:opacity-50">
+        {gettingLocation ? (
+          <>
+            <div className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></div>
+            Getting Location...
+          </>
+        ) : (
+          <>
+            <MapPinIcon className="w-5 h-5" /> Get My GPS Location
+          </>
+        )}
       </button>
       {latitude && (
         <div className="bg-amber-50 border border-amber-200 p-4 rounded-md">

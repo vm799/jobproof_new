@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { rateLimit } from '@/lib/rate-limit'
+import { getAuthenticatedManager } from '@/lib/auth'
 import { z } from 'zod'
 
 const reportSchema = z.object({
@@ -11,6 +12,12 @@ const reportSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Auth check — only logged-in managers can send reports
+    const manager = await getAuthenticatedManager()
+    if (!manager) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const ip = request.headers.get('x-forwarded-for') || 'unknown'
     const { success } = rateLimit(`report:${ip}`, { maxRequests: 5, windowMs: 60_000 })
     if (!success) {

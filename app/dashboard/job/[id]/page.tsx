@@ -50,6 +50,7 @@ export default function JobDetailPage() {
   const [sending, setSending] = useState(false)
   const [completing, setCompleting] = useState(false)
   const [message, setMessage] = useState('')
+  const [messageType, setMessageType] = useState<'success' | 'error'>('success')
   const [copied, setCopied] = useState(false)
 
   const shareOrCopy = useCallback(async (link: string, title: string) => {
@@ -63,12 +64,14 @@ export default function JobDetailPage() {
     }
     try {
       await navigator.clipboard.writeText(link)
+      setCopied(true)
+      setMessageType('success')
+      setMessage('Link copied to clipboard!')
+      setTimeout(() => setCopied(false), 2500)
     } catch {
-      // Clipboard API not available
+      setMessageType('error')
+      setMessage(`Copy this link: ${link}`)
     }
-    setCopied(true)
-    setMessage('Link copied to clipboard!')
-    setTimeout(() => setCopied(false), 2500)
   }, [])
 
   useEffect(() => {
@@ -90,12 +93,14 @@ export default function JobDetailPage() {
       const res = await fetch(`/api/jobs/${jobId}/send`, { method: 'POST', headers: csrfHeaders() })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to send')
+      setMessageType('success')
       setMessage(data.jobUrl ? `Sent! Crew link: ${data.jobUrl}` : 'Job sent to crew!')
       // Refresh job data
       const jobRes = await fetch(`/api/jobs/${jobId}`)
       const jobData = await jobRes.json()
       if (jobData?.job) setJob(jobData.job)
     } catch (err: unknown) {
+      setMessageType('error')
       setMessage(err instanceof Error ? err.message : 'Failed to send')
     } finally {
       setSending(false)
@@ -199,7 +204,7 @@ export default function JobDetailPage() {
 
         {/* Next Step Guide */}
         {message && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-md text-sm">{message}</div>
+          <div className={`p-3 rounded-md text-sm border ${messageType === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>{message}</div>
         )}
 
         {job.status === 'created' && (

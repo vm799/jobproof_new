@@ -104,6 +104,26 @@ export default function CrewJobPage() {
     init()
   }, [token])
 
+  // Persist evidence to IndexedDB after each step so data survives app close
+  const saveProgress = useCallback(async (updatedEvidence: EvidenceData) => {
+    try {
+      await saveJob({
+        id: `pending-${token}`,
+        step: 'in_progress',
+        beforePhoto: updatedEvidence.beforePhoto,
+        afterPhoto: updatedEvidence.afterPhoto,
+        latitude: updatedEvidence.latitude,
+        longitude: updatedEvidence.longitude,
+        w3w: updatedEvidence.w3w,
+        notes: updatedEvidence.notes,
+        signature: updatedEvidence.signature,
+        timestamp: updatedEvidence.timestamp,
+      })
+    } catch {
+      // IndexedDB not available
+    }
+  }, [token])
+
   // Camera cleanup
   useEffect(() => {
     return () => { stream?.getTracks().forEach(t => t.stop()) }
@@ -131,7 +151,9 @@ export default function CrewJobPage() {
     canvasRef.current.height = videoRef.current.videoHeight
     ctx.drawImage(videoRef.current, 0, 0)
     const photo = canvasRef.current.toDataURL('image/jpeg')
-    setEvidence(prev => ({ ...prev, [type === 'before' ? 'beforePhoto' : 'afterPhoto']: photo }))
+    const updated = { ...evidence, [type === 'before' ? 'beforePhoto' : 'afterPhoto']: photo }
+    setEvidence(updated)
+    saveProgress(updated)
     stream?.getTracks().forEach(t => t.stop())
     setStream(null)
     setStep(type === 'before' ? 'photo-after' : 'location')
@@ -142,36 +164,69 @@ export default function CrewJobPage() {
     if (!file) return
     const reader = new FileReader()
     reader.onload = (event) => {
-      setEvidence(prev => ({ ...prev, [type === 'before' ? 'beforePhoto' : 'afterPhoto']: event.target?.result as string }))
+      const updated = { ...evidence, [type === 'before' ? 'beforePhoto' : 'afterPhoto']: event.target?.result as string }
+      setEvidence(updated)
+      saveProgress(updated)
       setStep(type === 'before' ? 'photo-after' : 'location')
     }
     reader.readAsDataURL(file)
+    // Reset input so the same file can be re-selected
+    e.target.value = ''
   }
+
+  const [gettingLocation, setGettingLocation] = useState(false)
 
   const getLocation = () => {
     if (navigator.geolocation) {
+      setGettingLocation(true)
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const lat = pos.coords.latitude
           const lng = pos.coords.longitude
-          setEvidence(prev => ({ ...prev, latitude: lat, longitude: lng }))
+          const updated = { ...evidence, latitude: lat, longitude: lng }
+          setEvidence(updated)
+          saveProgress(updated)
+          setGettingLocation(false)
           setStep('notes')
           if (navigator.onLine) {
             fetch(`/api/w3w?lat=${lat}&lng=${lng}`)
               .then(res => res.ok ? res.json() : null)
-              .then(data => { if (data?.words) setEvidence(prev => ({ ...prev, w3w: data.words })) })
+              .then(data => {
+                if (data?.words) {
+                  setEvidence(prev => {
+                    const u = { ...prev, w3w: data.words }
+                    saveProgress(u)
+                    return u
+                  })
+                }
+              })
               .catch(() => {})
           }
         },
-        () => { setStep('notes') }
+        (err) => {
+          console.warn('Geolocation failed:', err.message)
+          setGettingLocation(false)
+          setStep('notes')
+        }
       )
     } else { setStep('notes') }
   }
 
   const handleSignature = () => {
     if (!signatureCanvasRef.current) return
+    // Check if canvas has any drawn content
+    const ctx = signatureCanvasRef.current.getContext('2d')
+    if (!ctx) return
+    const pixels = ctx.getImageData(0, 0, signatureCanvasRef.current.width, signatureCanvasRef.current.height).data
+    let hasContent = false
+    for (let i = 3; i < pixels.length; i += 4) {
+      if (pixels[i] > 0) { hasContent = true; break }
+    }
+    if (!hasContent) return // Don't proceed with empty signature
     const sig = signatureCanvasRef.current.toDataURL('image/png')
-    setEvidence(prev => ({ ...prev, signature: sig }))
+    const updated = { ...evidence, signature: sig }
+    setEvidence(updated)
+    saveProgress(updated)
     setStep('review')
   }
 
@@ -213,7 +268,7 @@ export default function CrewJobPage() {
 
     try {
       if (isOnline) {
-        await fetch(`/api/crew/${token}/evidence`, {
+        const evidenceRes = await fetch(`/api/crew/${token}/evidence`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -227,13 +282,15 @@ export default function CrewJobPage() {
             seal,
           })
         })
-        await fetch(`/api/crew/${token}/submit`, { method: 'POST' })
+        if (!evidenceRes.ok) throw new Error('Evidence upload failed')
+        const submitRes = await fetch(`/api/crew/${token}/submit`, { method: 'POST' })
+        if (!submitRes.ok) throw new Error('Submit failed')
         didSubmitOnline = true
         // Clean up any pending IndexedDB entry
         try { await deleteJob(`pending-${token}`) } catch {}
       }
     } catch {
-      // Offline or network error
+      // Offline or network error — will save to IndexedDB below
     }
 
     // If not submitted online, persist evidence to IndexedDB so it survives app close
@@ -259,6 +316,11 @@ export default function CrewJobPage() {
     setSubmittedOnline(didSubmitOnline)
     setStep('submitted')
     setSubmitting(false)
+  }
+
+  const goBack = () => {
+    const idx = STEPS.indexOf(step)
+    if (idx > 1) setStep(STEPS[idx - 1]) // don't go back past photo-before
   }
 
   const stepIndex = STEPS.indexOf(step)
@@ -307,7 +369,7 @@ export default function CrewJobPage() {
       )}
 
       {/* Progress */}
-      <StepProgressBar step={step} stepIndex={stepIndex} totalSteps={STEPS.length} progress={progress} />
+      <StepProgressBar step={step} stepIndex={stepIndex} totalSteps={STEPS.length} progress={progress} onBack={goBack} />
 
       {/* Content */}
       <div className="max-w-2xl mx-auto p-4 pb-20">
@@ -356,6 +418,7 @@ export default function CrewJobPage() {
             latitude={evidence.latitude}
             longitude={evidence.longitude}
             w3w={evidence.w3w}
+            gettingLocation={gettingLocation}
             onGetLocation={getLocation}
             onContinue={() => setStep('notes')}
           />

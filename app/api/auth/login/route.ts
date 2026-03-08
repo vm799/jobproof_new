@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     // Send magic link email
     if (!process.env.RESEND_API_KEY) {
       console.log('Demo mode: Magic link:', loginUrl)
-      return NextResponse.json({ success: true, message: 'Login link sent (demo mode)', demoUrl: loginUrl })
+      return NextResponse.json({ success: true, message: 'Login link sent (demo mode)' })
     }
 
     const resend = new Resend(process.env.RESEND_API_KEY)
