@@ -48,3 +48,12 @@ export const sendReportSchema = z.object({
   subject: z.string().min(1).max(200),
   html: z.string().max(500_000),
 })
+
+export const redeemCodeSchema = z.object({
+  code: z.string().min(1, 'Code is required').max(100, 'Code too long')
+    .transform(s => s.trim().toUpperCase()),
+})
+
+export const stripeCheckoutSchema = z.object({
+  tier: z.enum(['tier1', 'tier2', 'tier3']),
+})

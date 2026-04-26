@@ -7,6 +7,8 @@ import {
   evidenceSchema,
   subscribeSchema,
   sendReportSchema,
+  redeemCodeSchema,
+  stripeCheckoutSchema,
 } from '@/lib/validation'
 
 describe('loginSchema', () => {
@@ -163,5 +165,45 @@ describe('sendReportSchema', () => {
     expect(
       sendReportSchema.safeParse({ to: 'bad', subject: 'Hi', html: '<h1/>' }).success
     ).toBe(false)
+  })
+})
+
+describe('redeemCodeSchema', () => {
+  it('accepts valid code and uppercases it', () => {
+    const result = redeemCodeSchema.safeParse({ code: 'jobproof-abc123' })
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.code).toBe('JOBPROOF-ABC123')
+  })
+  it('trims whitespace before uppercasing', () => {
+    const result = redeemCodeSchema.safeParse({ code: '  abc-123  ' })
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.code).toBe('ABC-123')
+  })
+  it('rejects empty code', () => {
+    expect(redeemCodeSchema.safeParse({ code: '' }).success).toBe(false)
+  })
+  it('rejects missing code', () => {
+    expect(redeemCodeSchema.safeParse({}).success).toBe(false)
+  })
+  it('rejects code over 100 chars', () => {
+    expect(redeemCodeSchema.safeParse({ code: 'x'.repeat(101) }).success).toBe(false)
+  })
+})
+
+describe('stripeCheckoutSchema', () => {
+  it('accepts tier1', () => {
+    expect(stripeCheckoutSchema.safeParse({ tier: 'tier1' }).success).toBe(true)
+  })
+  it('accepts tier2', () => {
+    expect(stripeCheckoutSchema.safeParse({ tier: 'tier2' }).success).toBe(true)
+  })
+  it('accepts tier3', () => {
+    expect(stripeCheckoutSchema.safeParse({ tier: 'tier3' }).success).toBe(true)
+  })
+  it('rejects invalid tier', () => {
+    expect(stripeCheckoutSchema.safeParse({ tier: 'tier4' }).success).toBe(false)
+  })
+  it('rejects missing tier', () => {
+    expect(stripeCheckoutSchema.safeParse({}).success).toBe(false)
   })
 })
