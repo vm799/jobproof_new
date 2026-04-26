@@ -22,3 +22,19 @@ export const MAX_PAGE_SIZE = 100
 // Status
 export const JOB_STATUSES = ['created', 'sent', 'accepted', 'in_progress', 'submitted', 'completed'] as const
 export type JobStatus = typeof JOB_STATUSES[number]
+
+// Stripe LTD price IDs — populated via env vars set in Vercel after creating products in Stripe dashboard
+export const STRIPE_PRICE_IDS: Record<string, string> = {
+  tier1: process.env.STRIPE_PRICE_ID_TIER1 || '',
+  tier2: process.env.STRIPE_PRICE_ID_TIER2 || '',
+  tier3: process.env.STRIPE_PRICE_ID_TIER3 || '',
+}
+
+// Per-tier job/manager limits (undefined = unlimited)
+export const TIER_LIMITS: Record<string, { jobs?: number; managers?: number }> = {
+  tier1: { jobs: 50, managers: 1 },
+  tier2: { jobs: undefined, managers: 5 },
+  tier3: { jobs: undefined, managers: undefined },
+}
+
+export const APPSUMO_RATE_LIMIT = { maxRequests: 5, windowMs: 60 * 60 * 1000 } // 5 attempts per hour

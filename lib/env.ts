@@ -9,6 +9,12 @@ const envSchema = z.object({
   MAILCHIMP_API_KEY: z.string().min(1).optional(),
   MAILCHIMP_AUDIENCE_ID: z.string().min(1).optional(),
   MAILCHIMP_SERVER_PREFIX: z.string().min(1).optional(),
+  STRIPE_SECRET_KEY: z.string().min(1).optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1).optional(),
+  STRIPE_PRICE_ID_TIER1: z.string().min(1).optional(),
+  STRIPE_PRICE_ID_TIER2: z.string().min(1).optional(),
+  STRIPE_PRICE_ID_TIER3: z.string().min(1).optional(),
 })
 
 export type Env = z.infer<typeof envSchema>
