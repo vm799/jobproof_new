@@ -77,6 +77,17 @@ export async function getAuthenticatedManager() {
 /** Check if the manager's trial has expired. Returns { expired, daysLeft, trialEndsAt } */
 export async function checkTrialStatus(managerId: string): Promise<{ expired: boolean; daysLeft: number; trialEndsAt: string | null }> {
   const supabase = getServiceClient()
+
+  // Active subscription bypasses trial entirely
+  const { data: sub } = await supabase
+    .from('subscriptions')
+    .select('id')
+    .eq('manager_id', managerId)
+    .single()
+
+  if (sub) return { expired: false, daysLeft: Infinity, trialEndsAt: null }
+
+  // No subscription — check trial expiry
   const { data } = await supabase
     .from('managers')
     .select('trial_ends_at')

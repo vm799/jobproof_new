@@ -11,19 +11,15 @@ vi.mock('next/headers', () => ({
   cookies: () => mockCookies,
 }))
 
+const mockSupabaseFrom = vi.fn()
+
 vi.mock('@/lib/supabase', () => ({
   getServiceClient: () => ({
-    from: () => ({
-      select: () => ({
-        eq: () => ({
-          single: () => Promise.resolve({ data: { id: 'mgr-1', email: 'test@test.com' } }),
-        }),
-      }),
-    }),
+    from: mockSupabaseFrom,
   }),
 }))
 
-import { getAuthCookie, setAuthCookie, clearAuthCookie, getAuthenticatedManager } from '@/lib/auth'
+import { getAuthCookie, setAuthCookie, clearAuthCookie, getAuthenticatedManager, checkTrialStatus } from '@/lib/auth'
 
 describe('getAuthCookie', () => {
   beforeEach(() => {
@@ -101,7 +97,78 @@ describe('getAuthenticatedManager', () => {
 
   it('returns manager data when cookie is valid UUID', async () => {
     mockCookies.get.mockReturnValue({ value: '550e8400-e29b-41d4-a716-446655440000' })
+    mockSupabaseFrom.mockReturnValue({
+      select: () => ({
+        eq: () => ({
+          single: () => Promise.resolve({ data: { id: 'mgr-1', email: 'test@test.com' } }),
+        }),
+      }),
+    })
     const result = await getAuthenticatedManager()
     expect(result).toEqual({ id: 'mgr-1', email: 'test@test.com' })
+  })
+})
+
+describe('checkTrialStatus', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns expired:false with daysLeft:Infinity when subscription exists', async () => {
+    mockSupabaseFrom.mockImplementation((table: string) => {
+      if (table === 'subscriptions') {
+        return {
+          select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { id: 'sub-1' }, error: null }) }) }),
+        }
+      }
+      return {
+        select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }),
+      }
+    })
+
+    const result = await checkTrialStatus('mgr-1')
+    expect(result.expired).toBe(false)
+    expect(result.daysLeft).toBe(Infinity)
+    expect(result.trialEndsAt).toBeNull()
+  })
+
+  it('returns expired:true when no subscription and trial ended', async () => {
+    const past = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    mockSupabaseFrom.mockImplementation((table: string) => {
+      if (table === 'subscriptions') {
+        return {
+          select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: { code: 'PGRST116' } }) }) }),
+        }
+      }
+      return {
+        select: () => ({
+          eq: () => ({ single: () => Promise.resolve({ data: { trial_ends_at: past }, error: null }) }),
+        }),
+      }
+    })
+
+    const result = await checkTrialStatus('mgr-1')
+    expect(result.expired).toBe(true)
+    expect(result.daysLeft).toBe(0)
+  })
+
+  it('returns expired:false when no subscription and trial is active', async () => {
+    const future = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString()
+    mockSupabaseFrom.mockImplementation((table: string) => {
+      if (table === 'subscriptions') {
+        return {
+          select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: { code: 'PGRST116' } }) }) }),
+        }
+      }
+      return {
+        select: () => ({
+          eq: () => ({ single: () => Promise.resolve({ data: { trial_ends_at: future }, error: null }) }),
+        }),
+      }
+    })
+
+    const result = await checkTrialStatus('mgr-1')
+    expect(result.expired).toBe(false)
+    expect(result.daysLeft).toBeGreaterThan(0)
   })
 })
