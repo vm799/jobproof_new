@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { PlusIcon } from '@heroicons/react/20/solid'
+import { PlusIcon, Cog6ToothIcon } from '@heroicons/react/20/solid'
 import { ensureCsrfToken, csrfHeaders } from '@/lib/csrf-client'
+import { useOnlineStatus } from '@/lib/useOnlineStatus'
 
 interface Job {
   id: string
@@ -32,6 +33,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 
 export default function DashboardPage() {
   const router = useRouter()
+  const { isOnline } = useOnlineStatus()
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
@@ -130,11 +132,28 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-stone-50">
       {/* Header */}
       <div className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Image src="/logo.svg" alt="JobProof" width={26} height={26} priority />
-          <h1 className="text-sm font-bold tracking-wide">Dashboard</h1>
-        </div>
         <div className="flex items-center gap-3">
+          <Image src="/logo.svg" alt="JobProof" width={26} height={26} priority />
+          <h1 className="text-sm font-bold tracking-wide">JobProof</h1>
+          <span
+            title={isOnline ? 'Online — data syncing' : 'Offline — data saved locally'}
+            className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+              isOnline
+                ? 'bg-emerald-900 text-emerald-300'
+                : 'bg-amber-900 text-amber-300'
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+            {isOnline ? 'Online' : 'Offline'}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/upgrade"
+            className="text-amber-400 hover:text-amber-300 text-xs font-bold px-2 py-1 rounded transition-colors hidden sm:block"
+          >
+            Upgrade
+          </Link>
           <button
             onClick={() => setShowCreate(true)}
             className="bg-amber-500 hover:bg-amber-600 text-slate-900 px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-1 transition-colors"
@@ -142,6 +161,9 @@ export default function DashboardPage() {
             <PlusIcon className="w-4 h-4" />
             New Job
           </button>
+          <Link href="/settings" className="text-stone-400 hover:text-white transition-colors p-1 rounded" title="Settings">
+            <Cog6ToothIcon className="w-4 h-4" />
+          </Link>
           <button onClick={handleLogout} className="text-stone-400 hover:text-white text-xs transition-colors">
             Log out
           </button>
