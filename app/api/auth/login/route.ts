@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     if (tokenError) {
       console.error('Token insert error:', tokenError)
-      return NextResponse.json({ error: 'Failed to create login link', debug: tokenError.message, code: tokenError.code }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to create login link' }, { status: 500 })
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jobproof.pro'
