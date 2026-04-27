@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `Price not configured for ${tier}` }, { status: 503 })
   }
 
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' })
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2023-10-16' })
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jobproof.pro'
 
   const session = await stripe.checkout.sessions.create({
