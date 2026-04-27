@@ -136,6 +136,8 @@ export default function DashboardPage() {
           <Image src="/logo.svg" alt="JobProof" width={26} height={26} priority />
           <h1 className="text-sm font-bold tracking-wide">JobProof</h1>
           <span
+            role="status"
+            aria-live="polite"
             title={isOnline ? 'Online — data syncing' : 'Offline — data saved locally'}
             className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
               isOnline
@@ -143,7 +145,7 @@ export default function DashboardPage() {
                 : 'bg-amber-900 text-amber-300'
             }`}
           >
-            <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+            <span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-amber-400'}`} />
             {isOnline ? 'Online' : 'Offline'}
           </span>
         </div>
@@ -161,7 +163,7 @@ export default function DashboardPage() {
             <PlusIcon className="w-4 h-4" />
             New Job
           </button>
-          <Link href="/settings" className="text-stone-400 hover:text-white transition-colors p-1 rounded" title="Settings">
+          <Link href="/settings" className="text-stone-400 hover:text-white transition-colors p-1 rounded" aria-label="Settings">
             <Cog6ToothIcon className="w-4 h-4" />
           </Link>
           <button onClick={handleLogout} className="text-stone-400 hover:text-white text-xs transition-colors">
