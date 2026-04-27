@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { PlusIcon, Cog6ToothIcon } from '@heroicons/react/20/solid'
 import { ensureCsrfToken, csrfHeaders } from '@/lib/csrf-client'
 import { useOnlineStatus } from '@/lib/useOnlineStatus'
+import { OnboardingFlow, shouldShowOnboarding } from './OnboardingFlow'
 
 interface Job {
   id: string
@@ -41,6 +42,7 @@ export default function DashboardPage() {
   const [form, setForm] = useState({ title: '', address: '', instructions: '', crewName: '', crewEmail: '' })
   const [error, setError] = useState('')
   const [trial, setTrial] = useState<{ expired: boolean; daysLeft: number } | null>(null)
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const modalRef = useRef<HTMLDivElement>(null)
 
   const loadJobs = useCallback(async () => {
@@ -63,6 +65,7 @@ export default function DashboardPage() {
     ensureCsrfToken()
     loadJobs()
     fetch('/api/trial').then(r => r.json()).then(setTrial).catch(() => {})
+    if (shouldShowOnboarding()) setShowOnboarding(true)
   }, [loadJobs])
 
   // Focus trap + escape key for modal
@@ -130,6 +133,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-stone-50">
+      {showOnboarding && <OnboardingFlow onDone={() => setShowOnboarding(false)} />}
       {/* Header */}
       <div className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
