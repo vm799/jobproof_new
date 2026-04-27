@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { ShieldCheckIcon, MapPinIcon, PhotoIcon, ArrowRightIcon, XMarkIcon } from '@heroicons/react/20/solid'
+import { useFocusTrap } from '@/lib/useFocusTrap'
 
-const STORAGE_KEY = 'jobproof_onboarded'
+export const STORAGE_KEY = 'jobproof_onboarded'
 
 const STEPS = [
   {
@@ -35,42 +36,56 @@ interface Props {
 
 export function OnboardingFlow({ onDone }: Props) {
   const [step, setStep] = useState(0)
+  const dialogRef = useRef<HTMLDivElement>(null)
 
   function finish() {
     localStorage.setItem(STORAGE_KEY, '1')
     onDone()
   }
 
+  useFocusTrap(dialogRef, true, { onEscape: finish, autoFocusSelector: '[data-primary-action]' })
+
   const current = STEPS[step]
   const isLast = step === STEPS.length - 1
 
   return (
     <div className="fixed inset-0 bg-slate-950/90 z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-sm shadow-2xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="onboarding-title"
+        className="bg-slate-900 border border-slate-700 rounded-xl w-full max-w-sm shadow-2xl"
+      >
         {/* Top bar */}
         <div className="flex items-center justify-between px-5 pt-5 pb-0">
           <div className="flex gap-1.5">
             {STEPS.map((_, i) => (
               <div
                 key={i}
+                aria-hidden="true"
                 className={`h-1 rounded-full transition-all ${
                   i === step ? 'w-6 bg-amber-400' : i < step ? 'w-4 bg-amber-700' : 'w-4 bg-slate-700'
                 }`}
               />
             ))}
           </div>
-          <button onClick={finish} aria-label="Skip onboarding" className="text-stone-500 hover:text-stone-300 transition-colors">
-            <XMarkIcon className="w-4 h-4" />
+          <button
+            onClick={finish}
+            aria-label="Skip onboarding and don't show again"
+            className="text-stone-500 hover:text-stone-300 transition-colors"
+          >
+            <XMarkIcon className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
 
         {/* Content */}
         <div className="px-5 pt-6 pb-5 text-center">
-          <div className="flex justify-center mb-4">{current.icon}</div>
+          <div className="flex justify-center mb-4" aria-hidden="true">{current.icon}</div>
           <span className={`inline-block text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full mb-3 ${current.badgeColor}`}>
             {current.badge}
           </span>
-          <h2 className="text-white font-bold text-lg leading-snug mb-3">{current.title}</h2>
+          <h2 id="onboarding-title" className="text-white font-bold text-lg leading-snug mb-3">{current.title}</h2>
           <p className="text-stone-400 text-sm leading-relaxed">{current.body}</p>
         </div>
 
@@ -85,11 +100,12 @@ export function OnboardingFlow({ onDone }: Props) {
             </button>
           )}
           <button
+            data-primary-action
             onClick={isLast ? finish : () => setStep(s => s + 1)}
             className="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-900 py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors"
           >
             {isLast ? 'Create my first job' : 'Next'}
-            {!isLast && <ArrowRightIcon className="w-4 h-4" />}
+            {!isLast && <ArrowRightIcon className="w-4 h-4" aria-hidden="true" />}
           </button>
         </div>
       </div>
