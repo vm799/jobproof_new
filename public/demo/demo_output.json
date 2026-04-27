@@ -1,0 +1,43 @@
+{
+  "description": "JobProof demo output — what the manager receives after crew submits evidence",
+  "job": {
+    "id": "demo-job-001",
+    "title": "Flat roof repair — Unit 4B",
+    "address": "42 Merchant Street, Manchester, M4 1AX",
+    "status": "completed",
+    "created_at": "2026-04-26T08:00:00.000Z",
+    "sent_at": "2026-04-26T08:15:00.000Z",
+    "accepted_at": "2026-04-26T09:00:00.000Z",
+    "submitted_at": "2026-04-26T10:34:17.000Z"
+  },
+  "proof_seal": {
+    "seal": "jp_a3f8e2d1c9b74e6f",
+    "algorithm": "SHA-256 HMAC",
+    "covers": ["before_photo", "after_photo", "signature", "gps", "timestamp"],
+    "verified": true,
+    "sealed_at": "2026-04-26T10:34:17.000Z"
+  },
+  "location": {
+    "latitude": 53.4808,
+    "longitude": -2.2426,
+    "w3w": "///filled.count.soap",
+    "accuracy_metres": 4
+  },
+  "report": {
+    "format": "HTML + PDF",
+    "emailed_to": "manager@example.com",
+    "includes": [
+      "Before photo with GPS timestamp",
+      "After photo with GPS timestamp",
+      "Crew signature",
+      "Work notes",
+      "Cryptographic proof seal",
+      "Audit trail"
+    ]
+  },
+  "offline_mode": {
+    "captured_offline": false,
+    "synced_at": "2026-04-26T10:34:22.000Z",
+    "queued_emails_sent": 1
+  }
+}

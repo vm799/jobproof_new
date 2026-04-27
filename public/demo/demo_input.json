@@ -1,0 +1,22 @@
+{
+  "description": "JobProof demo input — simulates a contractor documenting a roofing job",
+  "job": {
+    "id": "demo-job-001",
+    "title": "Flat roof repair — Unit 4B",
+    "address": "42 Merchant Street, Manchester, M4 1AX",
+    "instructions": "Replace felt on flat section above kitchen extension. Client concerned about water ingress near skylight.",
+    "crew_name": "Rory Walsh",
+    "crew_email": "rory@walshroofing.co.uk",
+    "status": "sent"
+  },
+  "evidence": {
+    "before_photo": "[base64 image — captured via device camera on-site]",
+    "after_photo": "[base64 image — captured via device camera after completion]",
+    "notes": "Replaced 12 sq metres of torch-on felt. Sealed around skylight flashing. All debris removed.",
+    "latitude": 53.4808,
+    "longitude": -2.2426,
+    "w3w": "///filled.count.soap",
+    "signature": "[base64 SVG — crew signed on touchscreen]",
+    "timestamp": "2026-04-26T10:34:17.000Z"
+  }
+}
