@@ -20,8 +20,10 @@ vi.mock('@/lib/supabase', () => ({
 }))
 
 import { POST, GET } from '@/app/api/appsumo/redeem/route'
+import { createSignedCookieValue } from '@/lib/auth'
 
 const VALID_MANAGER_UUID = '550e8400-e29b-41d4-a716-446655440000'
+const SIGNED_MANAGER_COOKIE = createSignedCookieValue(VALID_MANAGER_UUID)
 
 function makeRequest(body: unknown): NextRequest {
   return new NextRequest('http://localhost/api/appsumo/redeem', {
@@ -43,19 +45,19 @@ describe('POST /api/appsumo/redeem', () => {
   })
 
   it('returns 400 when code is missing', async () => {
-    mockCookies.get.mockReturnValue({ value: VALID_MANAGER_UUID })
+    mockCookies.get.mockReturnValue({ value: SIGNED_MANAGER_COOKIE })
     const res = await POST(makeRequest({}))
     expect(res.status).toBe(400)
   })
 
   it('returns 400 when code is empty string', async () => {
-    mockCookies.get.mockReturnValue({ value: VALID_MANAGER_UUID })
+    mockCookies.get.mockReturnValue({ value: SIGNED_MANAGER_COOKIE })
     const res = await POST(makeRequest({ code: '' }))
     expect(res.status).toBe(400)
   })
 
   it('returns 404 when code does not exist', async () => {
-    mockCookies.get.mockReturnValue({ value: VALID_MANAGER_UUID })
+    mockCookies.get.mockReturnValue({ value: SIGNED_MANAGER_COOKIE })
     mockSupabaseFrom.mockReturnValue({
       select: () => ({
         eq: () => ({
@@ -68,7 +70,7 @@ describe('POST /api/appsumo/redeem', () => {
   })
 
   it('returns 409 when code already redeemed', async () => {
-    mockCookies.get.mockReturnValue({ value: VALID_MANAGER_UUID })
+    mockCookies.get.mockReturnValue({ value: SIGNED_MANAGER_COOKIE })
     mockSupabaseFrom.mockReturnValue({
       select: () => ({
         eq: () => ({
@@ -87,7 +89,7 @@ describe('POST /api/appsumo/redeem', () => {
   })
 
   it('returns 409 when manager already has a code for this tier (stacking prevention)', async () => {
-    mockCookies.get.mockReturnValue({ value: VALID_MANAGER_UUID })
+    mockCookies.get.mockReturnValue({ value: SIGNED_MANAGER_COOKIE })
     mockSupabaseFrom.mockImplementation((table: string) => {
       if (table === 'appsumo_codes') {
         return {
@@ -116,7 +118,7 @@ describe('POST /api/appsumo/redeem', () => {
   })
 
   it('redeems code and creates subscription on success', async () => {
-    mockCookies.get.mockReturnValue({ value: VALID_MANAGER_UUID })
+    mockCookies.get.mockReturnValue({ value: SIGNED_MANAGER_COOKIE })
     mockSupabaseFrom.mockImplementation((table: string) => {
       if (table === 'appsumo_codes') {
         return {
@@ -159,7 +161,7 @@ describe('GET /api/appsumo/redeem', () => {
   })
 
   it('returns redeemed codes list for authenticated manager', async () => {
-    mockCookies.get.mockReturnValue({ value: VALID_MANAGER_UUID })
+    mockCookies.get.mockReturnValue({ value: SIGNED_MANAGER_COOKIE })
     mockSupabaseFrom.mockReturnValue({
       select: () => ({
         eq: () =>
@@ -178,7 +180,7 @@ describe('GET /api/appsumo/redeem', () => {
   })
 
   it('returns empty array when no codes redeemed', async () => {
-    mockCookies.get.mockReturnValue({ value: VALID_MANAGER_UUID })
+    mockCookies.get.mockReturnValue({ value: SIGNED_MANAGER_COOKIE })
     mockSupabaseFrom.mockReturnValue({
       select: () => ({
         eq: () => Promise.resolve({ data: [], error: null }),

@@ -47,12 +47,8 @@ export function createSignedCookieValue(managerId: string): string {
 export function getAuthCookie(): string | undefined {
   const raw = cookies().get(COOKIE_NAME)?.value
   if (!raw) return undefined
-  // Try signed format first
   const unsigned = unsign(raw)
   if (unsigned) return unsigned
-  // Fallback: accept raw UUID during migration (existing sessions)
-  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-  if (UUID_RE.test(raw)) return raw
   return undefined
 }
 

@@ -33,10 +33,10 @@ describe('getAuthCookie', () => {
     expect(mockCookies.get).toHaveBeenCalledWith(COOKIE_NAME)
   })
 
-  it('accepts a raw UUID for backward compatibility', () => {
+  it('rejects unsigned raw UUID (no backward compat)', () => {
     mockCookies.get.mockReturnValue({ value: '550e8400-e29b-41d4-a716-446655440000' })
     const result = getAuthCookie()
-    expect(result).toBe('550e8400-e29b-41d4-a716-446655440000')
+    expect(result).toBeUndefined()
   })
 
   it('rejects garbage values', () => {
@@ -95,8 +95,10 @@ describe('getAuthenticatedManager', () => {
     expect(result).toBeNull()
   })
 
-  it('returns manager data when cookie is valid UUID', async () => {
-    mockCookies.get.mockReturnValue({ value: '550e8400-e29b-41d4-a716-446655440000' })
+  it('returns manager data when cookie is valid signed UUID', async () => {
+    await setAuthCookie('550e8400-e29b-41d4-a716-446655440000')
+    const signedValue = mockCookies.set.mock.calls[0][1]
+    mockCookies.get.mockReturnValue({ value: signedValue })
     mockSupabaseFrom.mockReturnValue({
       select: () => ({
         eq: () => ({

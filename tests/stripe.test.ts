@@ -23,6 +23,9 @@ vi.mock('@/lib/supabase', () => ({
 }))
 
 import { POST as checkoutPOST } from '@/app/api/stripe/checkout/route'
+import { createSignedCookieValue } from '@/lib/auth'
+
+const SIGNED_MANAGER_COOKIE = createSignedCookieValue('550e8400-e29b-41d4-a716-446655440000')
 import { POST as webhookPOST } from '@/app/api/stripe/webhook/route'
 import { NextRequest } from 'next/server'
 
@@ -51,13 +54,13 @@ describe('POST /api/stripe/checkout', () => {
   })
 
   it('returns 400 for invalid tier', async () => {
-    mockCookies.get.mockReturnValue({ value: '550e8400-e29b-41d4-a716-446655440000' })
+    mockCookies.get.mockReturnValue({ value: SIGNED_MANAGER_COOKIE })
     const res = await checkoutPOST(makeCheckoutRequest({ tier: 'tier9' }))
     expect(res.status).toBe(400)
   })
 
   it('creates Stripe session with correct metadata and returns url', async () => {
-    mockCookies.get.mockReturnValue({ value: '550e8400-e29b-41d4-a716-446655440000' })
+    mockCookies.get.mockReturnValue({ value: SIGNED_MANAGER_COOKIE })
     mockCreateSession.mockResolvedValue({ url: 'https://checkout.stripe.com/pay/cs_test_123' })
 
     const res = await checkoutPOST(makeCheckoutRequest({ tier: 'tier2' }))
