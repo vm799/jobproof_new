@@ -338,8 +338,8 @@ export default function Home() {
                 a: "Yes, 100%. Photos, GPS, signatures, and crypto seal all work without internet. When you're back online, everything syncs automatically."
               },
               {
-                q: 'Is the proof admissible in court?',
-                a: 'Yes. The cryptographic seal makes it tamper-proof. GPS timestamp proves location and time. Export format is ready for court and insurance.'
+                q: 'Will this hold up in a dispute?',
+                a: 'JobProof is designed for exactly this. The cryptographic seal makes the evidence tamper-evident, GPS locks the time and location, and the export format is structured for insurance, lien, and dispute use. We recommend keeping a copy of the report and consulting a solicitor if you need to use it in a formal dispute.'
               },
               {
                 q: 'What if my crew forgets to sync?',
