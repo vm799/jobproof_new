@@ -81,7 +81,7 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-stone-500">Plan</span>
                     <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full border border-emerald-200">
-                      ✓ {data.subscription.tierName} — Lifetime
+                      ✓ {data.subscription.tierName}{data.subscription.source === 'appsumo' ? ' — Lifetime' : ''}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">

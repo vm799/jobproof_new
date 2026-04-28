@@ -1,10 +1,17 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getAuthCookie } from '@/lib/auth'
 import { getServiceClient } from '@/lib/supabase'
+import { rateLimit } from '@/lib/rate-limit'
 
 const TIER_NAMES: Record<string, string> = { tier1: 'Solo', tier2: 'Team', tier3: 'Enterprise' }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for') || 'unknown'
+  const { success } = rateLimit(`settings:${ip}`, { maxRequests: 30, windowMs: 60_000 })
+  if (!success) {
+    return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+  }
+
   const managerId = getAuthCookie()
   if (!managerId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
