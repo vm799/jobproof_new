@@ -37,7 +37,7 @@ const FAQS = [
   },
   {
     q: 'Can I have multiple team members using one account?',
-    a: 'The Solo plan (£29 LTD) covers 1 manager account with up to 50 jobs. The Team plan (£99 LTD) covers up to 5 manager accounts with unlimited jobs. Enterprise (£299 LTD) is unlimited managers and jobs.',
+    a: 'Today JobProof is single-manager: one login per account, with unlimited crew using tokenized links per job (no crew accounts needed). Multi-manager seats — Team (£99) for 5 manager logins and Enterprise (£299) for unlimited — is on the roadmap and shipping next. AppSumo lifetime buyers automatically receive the seat upgrade when it lands.',
   },
   {
     q: 'What if I have a problem or question?',

@@ -25,11 +25,13 @@ const IN_PROGRESS = [
 ]
 
 const PLANNED = [
-  'Team management — invite crew members as named users',
+  'Multi-manager teams — Team plan (£99) and Enterprise (£299) seat invites with role-based permissions',
+  'Crew member named accounts — track which crew member submitted which evidence',
   'Bulk job creation from CSV',
   'Evidence archive with search and filter',
   'Client portal — view your signed reports without logging in',
   'Slack and email notifications when crew submits',
+  'Signed-URL evidence delivery (photo and signature URLs expire after 1 hour)',
   'API access for integration with your existing systems',
   'Mobile app (iOS + Android) — native offline mode',
 ]

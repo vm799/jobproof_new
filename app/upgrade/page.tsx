@@ -29,9 +29,8 @@ const tiers = [
     description: 'For growing teams managing multiple sites and crew members.',
     features: [
       'Unlimited jobs',
-      'Up to 5 manager accounts',
+      '5 manager seats (rolling out — auto-upgraded for AppSumo buyers)',
       'Everything in Solo',
-      'Multiple managers, one account',
       'Priority email support',
       'Lifetime access — no monthly fees',
     ],
@@ -45,7 +44,7 @@ const tiers = [
     description: 'For larger contractors managing multiple teams.',
     features: [
       'Unlimited jobs',
-      'Unlimited manager accounts',
+      'Unlimited manager seats (rolling out — auto-upgraded for AppSumo buyers)',
       'Everything in Team',
       'Priority support',
       'Onboarding call included',
