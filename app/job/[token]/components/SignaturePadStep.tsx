@@ -31,6 +31,20 @@ export default function SignaturePadStep({ signatureCanvasRef, onConfirm, onClea
     return () => window.removeEventListener('resize', resize)
   }, [signatureCanvasRef])
 
+  // React's onTouchStart/onTouchMove are passive in React 18 — preventDefault is a no-op there.
+  // Attach native non-passive listeners so we can stop the page from scrolling while drawing.
+  useEffect(() => {
+    const canvas = signatureCanvasRef.current
+    if (!canvas) return
+    const stop = (e: TouchEvent) => e.preventDefault()
+    canvas.addEventListener('touchstart', stop, { passive: false })
+    canvas.addEventListener('touchmove', stop, { passive: false })
+    return () => {
+      canvas.removeEventListener('touchstart', stop)
+      canvas.removeEventListener('touchmove', stop)
+    }
+  }, [signatureCanvasRef])
+
   const getPos = (e: React.MouseEvent | React.TouchEvent) => {
     const rect = signatureCanvasRef.current?.getBoundingClientRect()
     if (!rect) return null
@@ -80,7 +94,11 @@ export default function SignaturePadStep({ signatureCanvasRef, onConfirm, onClea
       <h2 className="text-xl font-bold text-slate-900">Client Signature</h2>
       <p className="text-stone-500 text-sm">Have the client sign below to confirm the work.</p>
       <p className="sr-only">Use mouse or touch to draw your signature on the canvas below</p>
-      <div ref={containerRef} className="border-2 border-stone-300 rounded-md bg-white relative">
+      <div
+        ref={containerRef}
+        className="border-2 border-stone-300 rounded-md bg-white relative"
+        style={{ touchAction: 'none', overscrollBehavior: 'contain' }}
+      >
         <canvas
           role="img"
           aria-label="Signature pad - draw your signature here"

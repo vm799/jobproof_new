@@ -29,6 +29,16 @@ body {
   min-height: 100dvh;
 }
 
+/* Prevent iOS Safari auto-zoom on focus — triggers when input font-size < 16px.
+   On phones (<= 640px) force 16px minimum on form fields regardless of Tailwind text-* class. */
+@media (max-width: 640px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 /* Prevent media from causing horizontal overflow */
 img, video, canvas, iframe, svg {
   max-width: 100%;
