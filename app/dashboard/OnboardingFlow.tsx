@@ -25,7 +25,7 @@ const STEPS = [
     icon: <ShieldCheckIcon className="w-10 h-10 text-amber-400" />,
     title: 'Cryptographic seal on every report.',
     body: "Once submitted, the evidence is sealed with a SHA-256 hash. Change one pixel in a photo or one character in the notes — the seal breaks and the tampering is visible to anyone who checks.",
-    badge: 'Court-ready',
+    badge: 'Dispute-ready',
     badgeColor: 'bg-amber-900 text-amber-300',
   },
 ]
