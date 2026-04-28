@@ -43,4 +43,22 @@ describe('DashboardPage nav', () => {
     const status = screen.getByRole('status')
     expect(status.textContent).toMatch(/online/i)
   })
+
+  it('renders visible FAQ link in header', () => {
+    render(<DashboardPage />)
+    const links = screen.getAllByRole('link', { name: /^faq$/i })
+    expect(links[0].getAttribute('href')).toBe('/faq')
+  })
+
+  it('renders visible Roadmap link in header', () => {
+    render(<DashboardPage />)
+    const links = screen.getAllByRole('link', { name: /^roadmap$/i })
+    expect(links[0].getAttribute('href')).toBe('/roadmap')
+  })
+
+  it('renders visible Help mailto link in header', () => {
+    render(<DashboardPage />)
+    const links = screen.getAllByRole('link', { name: /^help$/i })
+    expect(links[0].getAttribute('href')).toBe('mailto:vaishaligor25@gmail.com')
+  })
 })

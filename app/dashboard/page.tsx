@@ -154,7 +154,25 @@ export default function DashboardPage() {
             {isOnline ? 'Online' : 'Offline'}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-3">
+          <Link
+            href="/faq"
+            className="text-stone-300 hover:text-white text-xs font-medium px-2 py-1 rounded transition-colors hidden md:block"
+          >
+            FAQ
+          </Link>
+          <Link
+            href="/roadmap"
+            className="text-stone-300 hover:text-white text-xs font-medium px-2 py-1 rounded transition-colors hidden md:block"
+          >
+            Roadmap
+          </Link>
+          <a
+            href="mailto:vaishaligor25@gmail.com"
+            className="text-stone-300 hover:text-white text-xs font-medium px-2 py-1 rounded transition-colors hidden md:block"
+          >
+            Help
+          </a>
           <Link
             href="/upgrade"
             className="text-amber-400 hover:text-amber-300 text-xs font-bold px-2 py-1 rounded transition-colors hidden sm:block"
