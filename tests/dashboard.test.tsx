@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -31,9 +31,10 @@ describe('DashboardPage nav', () => {
     expect(link.getAttribute('href')).toBe('/upgrade')
   })
 
-  it('renders Settings link with accessible label', () => {
+  it('exposes Settings via account menu dropdown', () => {
     render(<DashboardPage />)
-    const link = screen.getByRole('link', { name: /settings/i })
+    fireEvent.click(screen.getByRole('button', { name: /open account menu/i }))
+    const link = screen.getByRole('menuitem', { name: /settings/i })
     expect(link.getAttribute('href')).toBe('/settings')
   })
 

@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { PlusIcon, Cog6ToothIcon } from '@heroicons/react/20/solid'
+import { PlusIcon } from '@heroicons/react/20/solid'
 import { ensureCsrfToken, csrfHeaders } from '@/lib/csrf-client'
 import { useOnlineStatus } from '@/lib/useOnlineStatus'
 import { OnboardingFlow, shouldShowOnboarding } from './OnboardingFlow'
+import { AccountMenu } from './AccountMenu'
 
 interface Job {
   id: string
@@ -167,12 +168,7 @@ export default function DashboardPage() {
             <PlusIcon className="w-4 h-4" />
             New Job
           </button>
-          <Link href="/settings" className="text-stone-400 hover:text-white transition-colors p-1 rounded" aria-label="Settings">
-            <Cog6ToothIcon className="w-4 h-4" />
-          </Link>
-          <button onClick={handleLogout} className="text-stone-400 hover:text-white text-xs transition-colors">
-            Log out
-          </button>
+          <AccountMenu onLogout={handleLogout} />
         </div>
       </div>
 
