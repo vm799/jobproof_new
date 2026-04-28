@@ -14,12 +14,14 @@ const SHIPPED = [
   'AppSumo lifetime deal — Solo, Team, Enterprise tiers',
   'AppSumo code redemption in-app',
   '14-day free trial for new signups',
+  'Settings page — subscription management, account details',
+  'In-app onboarding — offline-first, GPS, cryptographic seal walkthrough',
+  'Online/offline status indicator on dashboard',
 ]
 
 const IN_PROGRESS = [
   'Evidence report export to PDF (court-ready format)',
-  'Improved offline sync status indicator',
-  'Settings page — subscription management, account details',
+  'Custom branding on reports (company logo, colours)',
 ]
 
 const PLANNED = [
