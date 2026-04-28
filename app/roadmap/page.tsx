@@ -20,7 +20,7 @@ const SHIPPED = [
 ]
 
 const IN_PROGRESS = [
-  'Evidence report export to PDF (court-ready format)',
+  'Evidence report export to PDF (audit-ready format)',
   'Custom branding on reports (company logo, colours)',
 ]
 
@@ -30,7 +30,6 @@ const PLANNED = [
   'Evidence archive with search and filter',
   'Client portal — view your signed reports without logging in',
   'Slack and email notifications when crew submits',
-  'Custom branding on reports (company logo, colours)',
   'API access for integration with your existing systems',
   'Mobile app (iOS + Android) — native offline mode',
 ]
